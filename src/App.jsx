@@ -1,9 +1,10 @@
-import { useState } from 'react'
 import './App.css'
 import { Routes, Route, Router } from "react-router-dom"
 
 import AdminApp from './dashboards/admin/App.jsx'
 import HeadCookApp from './dashboards/head_cook/App.jsx'
+import ManagerApp from './dashboards/manager/App.jsx'
+import SupervisorApp from './dashboards/supervisor/App.jsx'
 
 function App() {
 
@@ -11,6 +12,8 @@ function App() {
     <Routes>
       <Route path="/admin/*" element={<AdminApp />} />
       <Route path="/headCook/*" element={<HeadCookApp />} />
+      <Route path="/manager/*" element={<ManagerApp />} />
+      <Route path="/supervisor/*" element={<SupervisorApp />} />
     </Routes>
   )
 }
