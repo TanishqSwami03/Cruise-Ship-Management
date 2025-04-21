@@ -35,7 +35,7 @@ const Sidebar = () => {
     <div className="w-64 bg-white h-full border-r border-gray-200 flex flex-col">
       {/* Logo */}
       <div className="p-4 border-b border-gray-200">
-        <Link to="/" className="flex items-center">
+        <Link to="/admin/" className="flex items-center">
           <div className="w-8 h-8 rounded-full bg-pink-500 flex items-center justify-center text-white font-bold">
             V
           </div>

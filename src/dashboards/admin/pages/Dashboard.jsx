@@ -4,6 +4,7 @@ import Header from "../components/Header"
 import StatCard from "../components/StatCard"
 import ServiceCard from "../components/ServiceCard"
 import ActionCard from "../components/ActionCard"
+import "../index.css"
 
 const Dashboard = ({ user }) => {
   const [stats, setStats] = useState({
