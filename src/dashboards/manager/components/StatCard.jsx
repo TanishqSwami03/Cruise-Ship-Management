@@ -17,7 +17,7 @@ function StatCard({ title, value, icon, color }) {
   const { bg, text } = getColorClasses()
 
   return (
-    <div className="bg-white rounded-lg border p-6">
+    <div className="bg-white rounded-lg shadow-sm p-6">
       <div className="flex items-center">
         <div className={`p-3 rounded-full ${bg} ${text} mr-4`}>{icon}</div>
         <div>

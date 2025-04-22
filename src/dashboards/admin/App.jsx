@@ -17,7 +17,7 @@ import AddEditMovieTicket from "./pages/AddEditMovieTicket"
 import AddEditBeautySalon from "./pages/AddEditBeautySalon"
 import AddEditFitnessClass from "./pages/AddEditFitnessClass"
 import AddEditPartyEvent from "./pages/AddEditPartyEvent"
-import "./App.css"
+import "./index.css"
 
 function AdminApp() {
   const [user, setUser] = useState({

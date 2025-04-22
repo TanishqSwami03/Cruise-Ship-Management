@@ -9,6 +9,7 @@ import PartyOrders from "./components/PartyOrders"
 import OrderDetails from "./components/OrderDetails"
 import Profile from "./components/Profile"
 import AllOrders from "./components/AllOrders"
+import './index.css'
 
 // Logout component
 const Logout = () => {

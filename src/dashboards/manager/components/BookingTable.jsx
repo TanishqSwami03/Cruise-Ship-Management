@@ -68,8 +68,8 @@ function BookingTable({ bookings, columns, title }) {
   }
 
   return (
-    <div className="bg-white rounded-lg border overflow-hidden">
-      <div className="p-4 border-b flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
+      <div className="p-4 border-b border-gray-100 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <h2 className="text-xl font-semibold text-gray-800">{title}</h2>
 
         <div className="relative">

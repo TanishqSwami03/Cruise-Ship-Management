@@ -7,13 +7,13 @@ import FitnessBookings from "./pages/FitnessBookings"
 import PartyHallBookings from "./pages/PartyHallBookings"
 import Profile from "./pages/Profile"
 
-function ManagerApp() {
+function App() {
   return (
       <div className="flex h-screen bg-gray-50">
         <Sidebar />
 
         <div className="flex flex-col flex-1 overflow-hidden">
-          <header className="flex items-center justify-end p-4 bg-white border-b">
+          <header className="flex items-center justify-end p-4 bg-white border-b border-gray-100">
             <div className="flex items-center gap-3">
               <div className="text-right">
                 <div className="text-gray-800 font-medium">Emma Johnson</div>
@@ -40,4 +40,4 @@ function ManagerApp() {
   )
 }
 
-export default ManagerApp
+export default App

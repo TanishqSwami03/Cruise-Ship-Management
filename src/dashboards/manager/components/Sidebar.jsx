@@ -9,9 +9,9 @@ function Sidebar() {
   }
 
   return (
-    <div className="w-64 bg-white border-r h-screen flex flex-col">
-      <div className="flex items-center h-16 px-6 border-b">
-        <Link to="/" className="flex items-center gap-2">
+    <div className="w-64 bg-white border-r border-gray-100 h-screen flex flex-col">
+      <div className="flex items-center h-16 px-6 border-b border-gray-100">
+        <Link to="/manager/" className="flex items-center gap-2">
           <div className="flex-shrink-0 bg-pink-500 text-white p-2 rounded-full">
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
               <path
@@ -30,7 +30,7 @@ function Sidebar() {
           <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-2">MAIN MENU</div>
           <nav className="space-y-1">
             <Link
-              to="/"
+              to="/manager/"
               className={`flex items-center gap-3 px-4 py-2 text-gray-700 rounded-md hover:bg-pink-50 hover:text-pink-600 ${isActive("/")}`}
             >
               <Home size={20} />
@@ -38,7 +38,7 @@ function Sidebar() {
             </Link>
 
             <Link
-              to="/movie-bookings"
+              to="/manager/movie-bookings"
               className={`flex items-center gap-3 px-4 py-2 text-gray-700 rounded-md hover:bg-pink-50 hover:text-pink-600 ${isActive("/movie-bookings")}`}
             >
               <Film size={20} />
@@ -46,7 +46,7 @@ function Sidebar() {
             </Link>
 
             <Link
-              to="/salon-bookings"
+              to="/manager/salon-bookings"
               className={`flex items-center gap-3 px-4 py-2 text-gray-700 rounded-md hover:bg-pink-50 hover:text-pink-600 ${isActive("/salon-bookings")}`}
             >
               <Scissors size={20} />
@@ -54,7 +54,7 @@ function Sidebar() {
             </Link>
 
             <Link
-              to="/fitness-bookings"
+              to="/manager/fitness-bookings"
               className={`flex items-center gap-3 px-4 py-2 text-gray-700 rounded-md hover:bg-pink-50 hover:text-pink-600 ${isActive("/fitness-bookings")}`}
             >
               <Activity size={20} />
@@ -62,7 +62,7 @@ function Sidebar() {
             </Link>
 
             <Link
-              to="/party-hall-bookings"
+              to="/manager/party-hall-bookings"
               className={`flex items-center gap-3 px-4 py-2 text-gray-700 rounded-md hover:bg-pink-50 hover:text-pink-600 ${isActive("/party-hall-bookings")}`}
             >
               <Music size={20} />
@@ -72,10 +72,10 @@ function Sidebar() {
         </div>
       </div>
 
-      <div className="p-6 border-t">
+      <div className="p-6 border-t border-gray-100">
         <nav className="space-y-1">
           <Link
-            to="/profile"
+            to="/manager/profile"
             className={`flex items-center gap-3 px-4 py-2 text-gray-700 rounded-md hover:bg-pink-50 hover:text-pink-600 ${isActive("/profile")}`}
           >
             <User size={20} />
