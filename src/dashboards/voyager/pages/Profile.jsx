@@ -1,23 +1,12 @@
 import { useState } from 'react';
-import { User, Ship, Settings, Edit } from 'lucide-react';
+import { User } from 'lucide-react';
+
+import { useUser } from "../context/UserContext"
 
 const Profile = () => {
-  const [activeTab, setActiveTab] = useState('personal');
+  const { user } = useUser(); // get user from context
   
-  const userData = {
-    name: 'Emma Johnson',
-    email: 'emma.johnson@example.com',
-    phone: '+1 (555) 123-4567',
-    address: '123 Ocean View Dr, Miami, FL 33101',
-    memberSince: 'March 2022',
-    membershipLevel: 'Diamond',
-    loyaltyPoints: 12450,
-    currentCruise: {
-      name: 'Caribbean Paradise - 7 Days',
-      dates: 'October 15, 2024 - October 22, 2024',
-      cabin: 'A-1024'
-    }
-  };
+  if (!user) return null;
   
   return (
     <div className="profile-page">
@@ -31,33 +20,26 @@ const Profile = () => {
               <div className="profile-avatar">
                 <User size={40} />
               </div>
-              <h2 className="profile-name">{userData.name}</h2>
-              <div className="membership-badge">Diamond Member</div>
+              <h2 className="profile-name">{user.name}</h2>
+              <div className="membership-badge">{user.package} Member</div>
               
               <div className="profile-contact">
                 <div className="contact-item">
                   <span className="contact-icon">✉️</span>
-                  <span>{userData.email}</span>
+                  <span>{user.email}</span>
                 </div>
                 <div className="contact-item">
                   <span className="contact-icon">📞</span>
-                  <span>{userData.phone}</span>
+                  <span>{user.phone}</span>
                 </div>
                 <div className="contact-item">
                   <span className="contact-icon">🏠</span>
-                  <span>{userData.address}</span>
+                  <span>{user.cabin}</span>
                 </div>
                 <div className="contact-item">
                   <span className="contact-icon">🎁</span>
-                  <span>{userData.loyaltyPoints} Loyalty Points</span>
+                  <span className='contact-expense' >₹ {user.expenses} spent</span>
                 </div>
-              </div>
-              
-              <div className="current-cruise">
-                <h3>Current Cruise</h3>
-                <div className="cruise-name">{userData.currentCruise.name}</div>
-                <div className="cruise-dates">{userData.currentCruise.dates}</div>
-                <div className="cruise-cabin">Cabin {userData.currentCruise.cabin}</div>
               </div>
             </div>
           </div>
@@ -65,44 +47,33 @@ const Profile = () => {
           <div className="profile-main">
             <div className="profile-tabs">
               <button 
-                className={`profile-tab ${activeTab === 'personal' ? 'active' : ''}`}
-                onClick={() => setActiveTab('personal')}
+                className={`profile-tab`}
               >
                 <User size={18} />
                 <span>Personal Info</span>
               </button>
-              <button 
-                className={`profile-tab ${activeTab === 'cruises' ? 'active' : ''}`}
-                onClick={() => setActiveTab('cruises')}
-              >
-                <Ship size={18} />
-                <span>My Cruises</span>
-              </button>
+              
             </div>
             
             <div className="tab-content">
-              {activeTab === 'personal' && (
                 <div className="personal-info">
-                  <div className="section-header">
-                    <h3>Personal Information</h3>
-                  </div>
                   
                   <div className="info-grid">
                     <div className="info-group">
                       <label>Full Name</label>
-                      <div className="info-value">{userData.name}</div>
+                      <div className="info-value">{user.name}</div>
                     </div>
                     <div className="info-group">
                       <label>Email Address</label>
-                      <div className="info-value">{userData.email}</div>
+                      <div className="info-value">{user.email}</div>
                     </div>
                     <div className="info-group">
                       <label>Phone Number</label>
-                      <div className="info-value">{userData.phone}</div>
+                      <div className="info-value">{user.phone}</div>
                     </div>
                     <div className="info-group">
-                      <label>Address</label>
-                      <div className="info-value">{userData.address}</div>
+                      <label>Cabin No.</label>
+                      <div className="info-value">{user.cabin}</div>
                     </div>
                   </div>
                   
@@ -112,69 +83,15 @@ const Profile = () => {
                   
                   <div className="info-grid">
                     <div className="info-group">
-                      <label>Member Since</label>
-                      <div className="info-value">{userData.memberSince}</div>
+                      <label>Check In</label>
+                      <div className="info-value">{user.checkIn}</div>
                     </div>
                     <div className="info-group">
-                      <label>Membership Level</label>
-                      <div className="info-value">{userData.membershipLevel}</div>
+                      <label>Check Out</label>
+                      <div className="info-value">{user.checkOut}</div>
                     </div>
                   </div>
                 </div>
-              )}
-              
-              {activeTab === 'cruises' && (
-                <div className="my-cruises">
-                  <h3>My Cruises</h3>
-                  
-                  <div className="cruise-list">
-                    <div className="cruise-item current">
-                      <div className="cruise-status">Current</div>
-                      <div className="cruise-details">
-                        <h4>Caribbean Paradise</h4>
-                        <div className="cruise-meta">
-                          <span>October 15 - 22, 2024</span>
-                          <span>•</span>
-                          <span>7 Days</span>
-                        </div>
-                        <div className="cruise-ports">
-                          Miami → Nassau → St. Thomas → St. Maarten → Miami
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="cruise-item">
-                      <div className="cruise-status past">Past</div>
-                      <div className="cruise-details">
-                        <h4>Mediterranean Adventure</h4>
-                        <div className="cruise-meta">
-                          <span>May 10 - 17, 2024</span>
-                          <span>•</span>
-                          <span>7 Days</span>
-                        </div>
-                        <div className="cruise-ports">
-                          Barcelona → Rome → Athens → Santorini → Barcelona
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="cruise-item">
-                      <div className="cruise-status past">Past</div>
-                      <div className="cruise-details">
-                        <h4>Alaska Expedition</h4>
-                        <div className="cruise-meta">
-                          <span>July 5 - 12, 2023</span>
-                          <span>•</span>
-                          <span>7 Days</span>
-                        </div>
-                        <div className="cruise-ports">
-                          Seattle → Juneau → Skagway → Ketchikan → Victoria → Seattle
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
               
             </div>
           </div>
@@ -249,6 +166,14 @@ const Profile = () => {
           gap: 8px;
           margin-bottom: 8px;
           font-size: 14px;
+        }
+
+        .contact-expense {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          margin-bottom: 0px;
+          font-size: 22px;
         }
         
         .current-cruise {

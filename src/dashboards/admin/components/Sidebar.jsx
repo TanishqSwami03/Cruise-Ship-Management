@@ -15,6 +15,9 @@ import {
 } from "lucide-react"
 import "../index.css"
 
+import { useUser } from '../contexts/UserContext'; // Adjust the import path if necessary
+import { getAuth, signOut } from 'firebase/auth';
+
 const Sidebar = () => {
   const location = useLocation()
   const navigate = useNavigate()
@@ -24,25 +27,34 @@ const Sidebar = () => {
     return location.pathname === path ? "active-link" : ""
   }
 
+  const { logout } = useUser(); // Access logout from context
+
   const handleLogout = () => {
-    // In a real app, you would handle logout logic here
-    alert("Logged out successfully")
-    // Then redirect to login page
-    // navigate('/login');
-  }
+    // Step 1: Sign out from Firebase
+    const auth = getAuth();
+    signOut(auth)
+      .then(() => {
+        // Step 2: Call logout function from UserContext
+        logout();
+
+        // Step 3: Show success alert
+        alert("Logged out successfully");
+
+        // Step 4: Navigate to login page
+        navigate('/');
+      })
+      .catch((error) => {
+        console.error('Error during logout:', error);
+        alert('An error occurred while logging out. Please try again.');
+      });
+  };
 
   return (
     <div className="w-64 bg-white h-full border-r border-gray-200 flex flex-col">
       {/* Logo */}
       <div className="p-4 border-b border-gray-200">
         <Link to="/admin/" className="flex items-center">
-          <div className="w-8 h-8 rounded-full bg-pink-500 flex items-center justify-center text-white font-bold">
-            V
-          </div>
-          <span className="ml-2 text-xl font-semibold">
-            <span className="text-pink-500">Voyager</span>
-            <span className="text-gray-700"> Admin</span>
-          </span>
+          <img src='/logo.png' alt="Got Cooked !" />
         </Link>
       </div>
 
@@ -78,6 +90,13 @@ const Sidebar = () => {
             >
               <Users className="w-5 h-5 mr-3" />
               View All Voyagers
+            </Link>
+            <Link
+              to="/admin/crewMembers"
+              className={`flex items-center px-3 py-2 text-sm rounded-md text-gray-700 hover:bg-pink-50 hover:text-pink-500 ${isActive("/voyagers")}`}
+            >
+              <Users className="w-5 h-5 mr-3" />
+              View All Crew Members
             </Link>
           </nav>
         </div>
@@ -128,13 +147,13 @@ const Sidebar = () => {
 
       {/* User Profile & Logout */}
       <div className="p-4 border-t border-gray-200">
-        <Link
+        {/* <Link
           to="/admin/profile"
           className={`flex items-center px-3 py-2 text-sm rounded-md text-gray-700 hover:bg-pink-50 hover:text-pink-500 ${isActive("/profile")}`}
         >
           <User className="w-5 h-5 mr-3" />
           Profile
-        </Link>
+        </Link> */}
         <button
           onClick={handleLogout}
           className="flex items-center px-3 py-2 text-sm rounded-md text-gray-700 hover:bg-pink-50 hover:text-pink-500 w-full text-left"

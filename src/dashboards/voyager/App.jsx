@@ -12,21 +12,18 @@ import PartyHall from './pages/PartyHall';
 import Profile from './pages/Profile';
 import ConfirmationModal from './components/ConfirmationModal.jsx';
 import { CartProvider } from './context/CartContext';
+import { UserProvider } from './context/UserContext';
+import Orders from './pages/Orders'
 import './index.css';
 import './VoyagerApp.css'
 
 function VoyagerApp() {
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [confirmationModal, setConfirmationModal] = useState({
     isOpen: false,
     title: '',
     message: '',
     onConfirm: () => {}
   });
-
-  const toggleSidebar = () => {
-    setSidebarCollapsed(!sidebarCollapsed);
-  };
 
   const showConfirmation = (title, message, onConfirm) => {
     setConfirmationModal({
@@ -42,12 +39,13 @@ function VoyagerApp() {
   };
 
   return (
+    <UserProvider>
       <CartProvider>
         <div className="voyager-dashboard">
         <div className="app-container">
-          <Sidebar collapsed={sidebarCollapsed} />
-          <div className={`content-container ${sidebarCollapsed ? 'sidebar-collapsed' : ''}`}>
-            <Header toggleSidebar={toggleSidebar} />
+          <Sidebar />
+          <div className={`content-container`}>
+            <Header />
             <main className="main-content">
               <Routes>
                 <Route path="/" element={<Dashboard />} />
@@ -58,6 +56,7 @@ function VoyagerApp() {
                 <Route path="/fitness" element={<FitnessCenter showConfirmation={showConfirmation} />} />
                 <Route path="/party" element={<PartyHall showConfirmation={showConfirmation} />} />
                 <Route path="/profile" element={<Profile />} />
+                <Route path="/orders" element={<Orders />} />
               </Routes>
             </main>
           </div>
@@ -71,6 +70,7 @@ function VoyagerApp() {
         </div>
         </div>
       </CartProvider>
+    </UserProvider>
   );
 }
 

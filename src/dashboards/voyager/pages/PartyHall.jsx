@@ -1,11 +1,17 @@
-import { useState } from 'react';
-import { Calendar, Clock, Users } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Clock, Users } from 'lucide-react';
+
+// FIrebase
+import { useUser } from "../context/UserContext"; // To get user information
+import { db } from "../../../firebase/firebaseConfig.js"; // Assuming you have firebase.js configured with Firestore
+import { collection, addDoc, doc, getDocs, updateDoc, where, query, serverTimestamp } from "firebase/firestore"; // Firestore functions
 
 const PartyHall = ({ showConfirmation }) => {
   const [selectedPackage, setSelectedPackage] = useState(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
-  const [guestCount, setGuestCount] = useState(10);
+  
+  const { user } = useUser();
   
   const partyPackages = [
     {
@@ -13,33 +19,25 @@ const PartyHall = ({ showConfirmation }) => {
       name: 'Basic Celebration',
       description: 'Standard party hall setup with basic decorations and sound system',
       duration: '3 hours',
-      price: 300,
-      maxGuests: 30
+      price: 3000,
+      maxGuests: 5
     },
     {
       id: 'premium',
       name: 'Premium Celebration',
       description: 'Enhanced decorations, premium sound system, and basic catering included',
       duration: '4 hours',
-      price: 500,
-      maxGuests: 50
+      price: 5000,
+      maxGuests: 10
     },
     {
       id: 'deluxe',
       name: 'Deluxe Celebration',
       description: 'Luxury decorations, DJ, premium catering, and photography service',
       duration: '5 hours',
-      price: 800,
-      maxGuests: 80
+      price: 9000,
+      maxGuests: 20,
     }
-  ];
-  
-  const availableDates = [
-    'October 15, 2024',
-    'October 16, 2024',
-    'October 17, 2024',
-    'October 18, 2024',
-    'October 19, 2024'
   ];
   
   const availableTimes = [
@@ -49,35 +47,99 @@ const PartyHall = ({ showConfirmation }) => {
     '8:00 PM - 1:00 AM'
   ];
   
+  // Function to generate available dates between checkIn and checkOut
+  const generateAvailableDates = (checkIn, checkOut) => {
+    const dates = [];
+    let currentDate = new Date(checkIn);
+    const endDate = new Date(checkOut);
+    
+    while (currentDate <= endDate) {
+      dates.push(currentDate.toLocaleDateString()); // Push formatted date string
+      currentDate.setDate(currentDate.getDate() + 1); // Increment date by 1
+    }
+    
+    return dates;
+  };
+
+  // Fetch available dates based on user's checkIn and checkOut
+  const availableDates = user ? generateAvailableDates(user.checkIn, user.checkOut) : [];
+
   const handlePackageSelect = (pkg) => {
     setSelectedPackage(pkg);
     setSelectedDate('');
     setSelectedTime('');
-    setGuestCount(10);
   };
   
-  const handleGuestCountChange = (e) => {
-    const count = parseInt(e.target.value);
-    if (count >= 5 && count <= (selectedPackage?.maxGuests || 100)) {
-      setGuestCount(count);
-    }
-  };
+  const handleBookParty = async () => {
+    console.log("User object:", user);
   
-  const handleBookParty = () => {
     if (selectedPackage && selectedDate && selectedTime) {
-      showConfirmation(
-        'Booking Confirmation',
-        `Your ${selectedPackage.name} has been booked for ${selectedDate} at ${selectedTime} for ${guestCount} guests.`,
-        () => {
-          setSelectedPackage(null);
-          setSelectedDate('');
-          setSelectedTime('');
-          setGuestCount(10);
+      if (!user || !user.uid) {
+        console.error("User is not logged in or user ID is missing.");
+        return;
+      }
+  
+      console.log(user.uid);
+  
+      try {
+        const gstAmount = ((selectedPackage.price * 18) / 100);
+        const totalAmount = selectedPackage.price + gstAmount;
+  
+        // Fetch user's current expense from the 'voyagers' collection
+        const q = query(collection(db, "voyagers"), where("uid", "==", user.uid));
+        const querySnapshot = await getDocs(q);
+  
+        if (querySnapshot.empty) {
+          console.error("User document not found in 'voyagers' collection.");
+          return;
         }
-      );
+  
+        const userDocRef = querySnapshot.docs[0].ref;
+        const userData = querySnapshot.docs[0].data();
+        const currentExpense = userData.expenses || 0;
+  
+        // Update user's expense
+        await updateDoc(userDocRef, {
+          expenses: currentExpense + totalAmount,
+        });
+  
+        // Instead of partyBookings, add to the common orders collection
+        await addDoc(collection(db, "orders"), {
+          uid: user.uid,                // user id
+          orderType: "Party Hall Booking", 
+          orderCategory: "party",        // this will be "party" or "catering" or "stationary" etc.
+          orderDetails: {
+            packageName: selectedPackage.name,
+            date: selectedDate,
+            time: selectedTime,
+            duration: selectedPackage.duration,
+            guests: selectedPackage.maxGuests,
+            gst : gstAmount,
+            subTotal : selectedPackage.price,
+            price: totalAmount, 
+          },
+          status: "Confirmed",
+          createdAt: serverTimestamp(),  // <- use serverTimestamp() instead of new Date()
+        });
+  
+        // Show confirmation
+        showConfirmation(
+          'Booking Confirmation',
+          `Your ${selectedPackage.name} has been booked for ${selectedDate} at ${selectedTime}`,
+          () => {
+            setSelectedPackage(null);
+            setSelectedDate('');
+            setSelectedTime('');
+          }
+        );
+      } catch (error) {
+        console.error("Error booking party hall:", error);
+      }
+    } else {
+      console.error("Please select a package, date, and time before booking.");
     }
   };
-  
+
   return (
     <div className="party-page">
       <div className="party-content">
@@ -105,7 +167,7 @@ const PartyHall = ({ showConfirmation }) => {
                       <span>Up to {pkg.maxGuests} guests</span>
                     </div>
                   </div>
-                  <div className="package-price">${pkg.price}</div>
+                  <div className="package-price">₹ {pkg.price}</div>
                 </div>
               </div>
             ))}
@@ -145,21 +207,6 @@ const PartyHall = ({ showConfirmation }) => {
                   </select>
                 </div>
                 
-                <div className="form-group">
-                  <label>Number of Guests</label>
-                  <input 
-                    type="number" 
-                    min="5" 
-                    max={selectedPackage.maxGuests}
-                    value={guestCount}
-                    onChange={handleGuestCountChange}
-                    className="form-control"
-                  />
-                  <div className="guest-limit">
-                    Maximum: {selectedPackage.maxGuests} guests
-                  </div>
-                </div>
-                
                 <div className="booking-summary">
                   <div className="summary-row">
                     <span>Package:</span>
@@ -171,11 +218,17 @@ const PartyHall = ({ showConfirmation }) => {
                   </div>
                   <div className="summary-row">
                     <span>Base Price:</span>
-                    <span>${selectedPackage.price}</span>
+                    <span>₹ {selectedPackage.price}</span>
                   </div>
+
+                  <div className="summary-row">
+                    <span>GST (18%)</span>
+                    <span>₹ {((selectedPackage.price * 18) / 100).toFixed(2)}</span> {/* Calculating 18% GST */}
+                  </div>
+
                   <div className="summary-row total">
                     <span>Total:</span>
-                    <span>${selectedPackage.price}</span>
+                    <span>₹ {((selectedPackage.price * 18) / 100 + selectedPackage.price).toFixed(2)}</span> {/* Base price + GST */}
                   </div>
                 </div>
                 

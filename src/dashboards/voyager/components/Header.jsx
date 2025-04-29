@@ -1,8 +1,14 @@
 import { Menu, User } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
+import { useUser } from "../context/UserContext";
 
-const Header = ({ toggleSidebar }) => {
+const Header = () => {
+
+  const { user } = useUser(); // get user from context
+  
+  if (!user) return null;
+
   return (
     <header className="header">
       <div className="header-content">
@@ -15,8 +21,8 @@ const Header = ({ toggleSidebar }) => {
         <div className="header-right">
           <Link to='/voyager/profile' className="user-profile">
             <div className="user-info">
-              <div className="user-name">Emma Johnson</div>
-              <div className="user-type">Premium Voyager</div>
+              <div className="user-name">{user.name}</div>
+              <div className="user-type">{user.package} Voyager</div>
             </div>
             <div className="user-avatar">
               <User size={20} />

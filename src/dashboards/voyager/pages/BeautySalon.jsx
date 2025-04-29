@@ -1,10 +1,16 @@
 import { useState } from 'react';
 import { Calendar, Clock, User } from 'lucide-react';
 
+import { useUser } from "../context/UserContext"; // To get user information
+import { db } from "../../../firebase/firebaseConfig.js"; // Assuming you have firebase.js configured with Firestore
+import { collection, addDoc, doc, getDocs, updateDoc, where, query, serverTimestamp } from "firebase/firestore"; // Firestore functions
+
 const BeautySalon = ({ showConfirmation }) => {
   const [selectedService, setSelectedService] = useState(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
+
+  const { user } = useUser();
   
   const beautyServices = [
     {
@@ -12,45 +18,54 @@ const BeautySalon = ({ showConfirmation }) => {
       name: 'Haircut & Styling',
       description: 'Professional haircut and styling by our expert stylists',
       duration: '60 min',
-      price: 65
+      price: 450
     },
     {
       id: 'manicure',
       name: 'Manicure',
       description: 'Nail care treatment including filing, shaping, and polish',
       duration: '45 min',
-      price: 40
+      price: 700
     },
     {
       id: 'pedicure',
       name: 'Pedicure',
       description: 'Foot care treatment including soak, exfoliation, and polish',
       duration: '60 min',
-      price: 50
+      price: 1000
     },
     {
       id: 'facial',
       name: 'Facial Treatment',
       description: 'Rejuvenating facial treatment customized for your skin type',
       duration: '75 min',
-      price: 80
+      price: 1400
     },
     {
       id: 'massage',
       name: 'Relaxing Massage',
       description: 'Therapeutic massage to relieve tension and promote relaxation',
       duration: '60 min',
-      price: 90
+      price: 2500
     }
   ];
   
-  const availableDates = [
-    'October 15, 2024',
-    'October 16, 2024',
-    'October 17, 2024',
-    'October 18, 2024',
-    'October 19, 2024'
-  ];
+  // Function to generate available dates between checkIn and checkOut
+  const generateAvailableDates = (checkIn, checkOut) => {
+    const dates = [];
+    let currentDate = new Date(checkIn);
+    const endDate = new Date(checkOut);
+    
+    while (currentDate <= endDate) {
+      dates.push(currentDate.toLocaleDateString()); // Push formatted date string
+      currentDate.setDate(currentDate.getDate() + 1); // Increment date by 1
+    }
+    
+    return dates;
+  };
+
+  // Fetch available dates based on user's checkIn and checkOut
+  const availableDates = user ? generateAvailableDates(user.checkIn, user.checkOut) : [];
   
   const availableTimes = [
     '09:00 AM',
@@ -67,17 +82,70 @@ const BeautySalon = ({ showConfirmation }) => {
     setSelectedTime('');
   };
   
-  const handleBookService = () => {
+  const handleBookBeautySalon = async () => {
+    console.log("User object:", user);
+  
     if (selectedService && selectedDate && selectedTime) {
-      showConfirmation(
-        'Booking Confirmation',
-        `Your ${selectedService.name} appointment has been booked for ${selectedDate} at ${selectedTime}.`,
-        () => {
-          setSelectedService(null);
-          setSelectedDate('');
-          setSelectedTime('');
+      if (!user || !user.uid) {
+        console.error("User is not logged in or user ID is missing.");
+        return;
+      }
+  
+      console.log(user.uid);
+  
+      try {
+        const gstAmount = ((selectedService.price * 18) / 100);
+        const totalAmount = selectedService.price + gstAmount;
+  
+        // Fetch user's current expense from the 'voyagers' collection
+        const q = query(collection(db, "voyagers"), where("uid", "==", user.uid));
+        const querySnapshot = await getDocs(q);
+  
+        if (querySnapshot.empty) {
+          console.error("User document not found in 'voyagers' collection.");
+          return;
         }
-      );
+  
+        const userDocRef = querySnapshot.docs[0].ref;
+        const userData = querySnapshot.docs[0].data();
+        const currentExpense = userData.expenses || 0;
+  
+        // Update user's expense
+        await updateDoc(userDocRef, {
+          expenses: currentExpense + totalAmount,
+        });
+  
+        // Instead of partyBookings, add to the common orders collection
+        await addDoc(collection(db, "orders"), {
+          uid: user.uid,                // user id
+          orderType: "Beauty Salon Booking", 
+          orderCategory: "beauty",        // this will be "party" or "catering" or "stationary" etc.
+          orderDetails: {
+            serviceName: selectedService.name,
+            date: selectedDate,
+            time: selectedTime,
+            duration: selectedService.duration,
+            price: totalAmount,
+          },
+          status: "Confirmed",
+          createdAt: serverTimestamp(),  // <- use serverTimestamp() instead of new Date()
+        });
+  
+        // Show confirmation
+        showConfirmation(
+          'Booking Confirmation',
+          `Your ${selectedService.name} has been booked for ${selectedDate} at ${selectedTime}`,
+          () => {
+            setSelectedService(null);
+            setSelectedDate('');
+            setSelectedTime('');
+          }
+        );
+      } catch (error) {
+        console.error("Error booking party hall:", error);
+      }
+    } else {
+      console.error("Please select a service, date, and time before booking.");
     }
   };
   
@@ -103,7 +171,7 @@ const BeautySalon = ({ showConfirmation }) => {
                       <Clock size={14} />
                       <span>{service.duration}</span>
                     </div>
-                    <div className="service-price">${service.price}</div>
+                    <div className="service-price">₹ {service.price}</div>
                   </div>
                 </div>
               </div>
@@ -155,14 +223,22 @@ const BeautySalon = ({ showConfirmation }) => {
                   </div>
                   <div className="summary-row">
                     <span>Price:</span>
-                    <span>${selectedService.price}</span>
+                    <span>₹ {selectedService.price}</span>
+                  </div>
+                  <div className="summary-row">
+                    <span>GST (18%)</span>
+                    <span>₹ {((selectedService.price * 18) / 100).toFixed(2)}</span> {/* Calculating 18% GST */}
+                  </div>
+                  <div className="summary-row total">
+                    <span>Total:</span>
+                    <span>₹ {((selectedService.price * 18) / 100 + selectedService.price).toFixed(2)}</span> {/* Base price + GST */}
                   </div>
                 </div>
                 
                 <button 
                   className="book-button"
                   disabled={!selectedDate || !selectedTime}
-                  onClick={handleBookService}
+                  onClick={handleBookBeautySalon}
                 >
                   Book Appointment
                 </button>

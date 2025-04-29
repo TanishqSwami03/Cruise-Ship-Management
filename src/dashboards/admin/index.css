@@ -111,7 +111,7 @@ body {
   @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
 }
 
-.badge-success {
+/* .badge-success {
   @apply bg-green-100 text-green-800;
 }
 
@@ -125,4 +125,28 @@ body {
 
 .badge-info {
   @apply bg-blue-100 text-blue-800;
+} */
+
+
+.badge {
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  font-size: 1rem;
+  display: inline-block;
 }
+
+.badge-blue {
+  background-color: #7facec;
+  color: black;
+}
+
+.badge-pink {
+  background-color: #e059d469;
+  color: black;
+}
+
+.badge-danger {
+  background-color: #e24a5f;
+  color: white;
+}
+

@@ -1,11 +1,18 @@
 import { useState } from 'react';
 import { Calendar, Clock, User } from 'lucide-react';
 
+import { useUser } from "../context/UserContext"; // To get user information
+import { db } from "../../../firebase/firebaseConfig.js"; // Assuming you have firebase.js configured with Firestore
+import { collection, addDoc, doc, getDocs, updateDoc, where, query, serverTimestamp } from "firebase/firestore"; // Firestore functions
+
+
 const FitnessCenter = ({ showConfirmation }) => {
-  const [activeTab, setActiveTab] = useState('classes');
+
   const [selectedClass, setSelectedClass] = useState(null);
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
+
+  const { user } = useUser();
   
   const fitnessClasses = [
     {
@@ -14,8 +21,6 @@ const FitnessCenter = ({ showConfirmation }) => {
       description: 'Relaxing yoga session for all experience levels',
       instructor: 'Sarah Johnson',
       duration: '60 min',
-      capacity: 15,
-      available: 8
     },
     {
       id: 'hiit',
@@ -23,8 +28,6 @@ const FitnessCenter = ({ showConfirmation }) => {
       description: 'High-intensity interval training to boost your metabolism',
       instructor: 'Mike Peterson',
       duration: '45 min',
-      capacity: 12,
-      available: 5
     },
     {
       id: 'pilates',
@@ -32,8 +35,6 @@ const FitnessCenter = ({ showConfirmation }) => {
       description: 'Core-strengthening exercises for improved posture and flexibility',
       instructor: 'Emma Roberts',
       duration: '60 min',
-      capacity: 10,
-      available: 3
     },
     {
       id: 'zumba',
@@ -41,18 +42,32 @@ const FitnessCenter = ({ showConfirmation }) => {
       description: 'Fun dance workout combining Latin and international music',
       instructor: 'Carlos Mendez',
       duration: '45 min',
-      capacity: 20,
-      available: 12
+    },
+    {
+      id: 'Gym',
+      name: 'Gym',
+      description: 'Dynamic high-energy gym workout.',
+      instructor: 'Sam Lee',
+      duration: '60 min',
     }
   ];
   
-  const availableDates = [
-    'October 15, 2024',
-    'October 16, 2024',
-    'October 17, 2024',
-    'October 18, 2024',
-    'October 19, 2024'
-  ];
+  // Function to generate available dates between checkIn and checkOut
+  const generateAvailableDates = (checkIn, checkOut) => {
+    const dates = [];
+    let currentDate = new Date(checkIn);
+    const endDate = new Date(checkOut);
+    
+    while (currentDate <= endDate) {
+      dates.push(currentDate.toLocaleDateString()); // Push formatted date string
+      currentDate.setDate(currentDate.getDate() + 1); // Increment date by 1
+    }
+    
+    return dates;
+  };
+
+  // Fetch available dates based on user's checkIn and checkOut
+  const availableDates = user ? generateAvailableDates(user.checkIn, user.checkOut) : [];
   
   const availableTimes = [
     '08:00 AM',
@@ -68,17 +83,75 @@ const FitnessCenter = ({ showConfirmation }) => {
     setSelectedTime('');
   };
   
-  const handleBookClass = () => {
+  // const handleBookClass = () => {
+  //   if (selectedClass && selectedDate && selectedTime) {
+  //     showConfirmation(
+  //       'Booking Confirmation',
+  //       `Your ${selectedClass.name} has been booked for ${selectedDate} at ${selectedTime}.`,
+  //       () => {
+  //         setSelectedClass(null);
+  //         setSelectedDate('');
+  //         setSelectedTime('');
+  //       }
+  //     );
+  //   }
+  // };
+
+  const handleBookFitness = async () => {
+    console.log("User object:", user);
+  
     if (selectedClass && selectedDate && selectedTime) {
-      showConfirmation(
-        'Booking Confirmation',
-        `Your ${selectedClass.name} has been booked for ${selectedDate} at ${selectedTime}.`,
-        () => {
-          setSelectedClass(null);
-          setSelectedDate('');
-          setSelectedTime('');
+      if (!user || !user.uid) {
+        console.error("User is not logged in or user ID is missing.");
+        return;
+      }
+  
+      console.log(user.uid);
+  
+      try {
+  
+        // Fetch user's current expense from the 'voyagers' collection
+        const q = query(collection(db, "voyagers"), where("uid", "==", user.uid));
+        const querySnapshot = await getDocs(q);
+  
+        if (querySnapshot.empty) {
+          console.error("User document not found in 'voyagers' collection.");
+          return;
         }
-      );
+  
+        // const userDocRef = querySnapshot.docs[0].ref;
+        // const userData = querySnapshot.docs[0].data();
+  
+        await addDoc(collection(db, "orders"), {
+          uid: user.uid,
+          orderType: "Fitness Center Booking", 
+          orderCategory: "fitness",
+          orderDetails: {
+            className: selectedClass.name,
+            date: selectedDate,
+            time: selectedTime,
+            duration: selectedClass.duration,
+            price : 0,
+          },
+          status: "Confirmed",
+          createdAt: serverTimestamp(),  // <- use serverTimestamp() instead of new Date()
+        });
+  
+        // Show confirmation
+        showConfirmation(
+          'Booking Confirmation',
+          `Your ${selectedClass.name} has been booked for ${selectedDate} at ${selectedTime}`,
+          () => {
+            setSelectedClass(null);
+            setSelectedDate('');
+            setSelectedTime('');
+          }
+        );
+      } catch (error) {
+        console.error("Error booking party hall:", error);
+      }
+    } else {
+      console.error("Please select a package, date, and time before booking.");
     }
   };
   
@@ -88,154 +161,77 @@ const FitnessCenter = ({ showConfirmation }) => {
         <h1 className="section-title">Fitness Center</h1>
         <p className="section-subtitle">Book fitness classes or reserve gym time during your cruise</p>
         
-        <div className="tabs">
-          <div className="tab-list">
-            <button 
-              className={`tab ${activeTab === 'classes' ? 'active' : ''}`}
-              onClick={() => setActiveTab('classes')}
-            >
-              Fitness Classes
-            </button>
-            <button 
-              className={`tab ${activeTab === 'gym' ? 'active' : ''}`}
-              onClick={() => setActiveTab('gym')}
-            >
-              Gym Reservations
-            </button>
-          </div>
-          
+        <div className="tabs">          
           <div className="tab-content">
-            {activeTab === 'classes' && (
-              <div className="classes-container">
-                <div className="classes-list">
-                  {fitnessClasses.map(fitnessClass => (
-                    <div 
-                      key={fitnessClass.id} 
-                      className={`class-card ${selectedClass?.id === fitnessClass.id ? 'selected' : ''}`}
-                      onClick={() => handleClassSelect(fitnessClass)}
-                    >
-                      <h3 className="class-name">{fitnessClass.name}</h3>
-                      <p className="class-description">{fitnessClass.description}</p>
-                      <div className="class-details">
-                        <div className="class-detail">
-                          <User size={14} />
-                          <span>{fitnessClass.instructor}</span>
-                        </div>
-                        <div className="class-detail">
-                          <Clock size={14} />
-                          <span>{fitnessClass.duration}</span>
-                        </div>
-                      </div>
-                      <div className="class-availability">
-                        <span className="availability-label">Available spots:</span>
-                        <span className="availability-value">{fitnessClass.available} of {fitnessClass.capacity}</span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                
-                {selectedClass && (
-                  <div className="booking-panel">
-                    <h3 className="booking-title">Book {selectedClass.name}</h3>
-                    
-                    <div className="booking-form">
-                      <div className="form-group">
-                        <label>Select Date</label>
-                        <select 
-                          value={selectedDate} 
-                          onChange={(e) => setSelectedDate(e.target.value)}
-                          className="form-select"
-                        >
-                          <option value="">Select a date</option>
-                          {availableDates.map(date => (
-                            <option key={date} value={date}>{date}</option>
-                          ))}
-                        </select>
-                      </div>
-                      
-                      <div className="form-group">
-                        <label>Select Time</label>
-                        <select 
-                          value={selectedTime} 
-                          onChange={(e) => setSelectedTime(e.target.value)}
-                          className="form-select"
-                          disabled={!selectedDate}
-                        >
-                          <option value="">Select a time</option>
-                          {availableTimes.map(time => (
-                            <option key={time} value={time}>{time}</option>
-                          ))}
-                        </select>
-                      </div>
-                      
-                      <button 
-                        className="book-button"
-                        disabled={!selectedDate || !selectedTime}
-                        onClick={handleBookClass}
-                      >
-                        Book Class
-                      </button>
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-            
-            {activeTab === 'gym' && (
-              <div className="gym-container">
-                <div className="gym-info">
-                  <h3>Gym Reservation</h3>
-                  <p>Reserve time slots at our state-of-the-art fitness center. Each reservation gives you access to all equipment for 90 minutes.</p>
-                  
-                  <div className="gym-hours">
-                    <h4>Fitness Center Hours</h4>
-                    <div className="hours-row">
-                      <span>Monday - Friday:</span>
-                      <span>6:00 AM - 10:00 PM</span>
-                    </div>
-                    <div className="hours-row">
-                      <span>Saturday - Sunday:</span>
-                      <span>7:00 AM - 9:00 PM</span>
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="reservation-form">
-                  <div className="form-group">
-                    <label>Select Date</label>
-                    <select className="form-select">
-                      <option value="">Select a date</option>
-                      {availableDates.map(date => (
-                        <option key={date} value={date}>{date}</option>
-                      ))}
-                    </select>
-                  </div>
-                  
-                  <div className="form-group">
-                        <label>Select Time</label>
-                        <select 
-                          value={selectedTime} 
-                          onChange={(e) => setSelectedTime(e.target.value)}
-                          className="form-select"
-                          disabled={!selectedDate}
-                        >
-                          <option value="">Select a time</option>
-                          {availableTimes.map(time => (
-                            <option key={time} value={time}>{time}</option>
-                          ))}
-                        </select>
-                  </div>
-                  
-                  <button 
-                        className="book-button"
-                        disabled={!selectedDate || !selectedTime}
-                        onClick={handleBookClass}
+            <div className="classes-container">
+              <div className="classes-list">
+                {fitnessClasses.map(fitnessClass => (
+                  <div 
+                    key={fitnessClass.id} 
+                    className={`class-card ${selectedClass?.id === fitnessClass.id ? 'selected' : ''}`}
+                    onClick={() => handleClassSelect(fitnessClass)}
                   >
-                    Reserve Time Slot
-                  </button>
-                </div>
+                    <h3 className="class-name">{fitnessClass.name}</h3>
+                    <p className="class-description">{fitnessClass.description}</p>
+                    <div className="class-details">
+                      <div className="class-detail">
+                        <User size={14} />
+                        <span>{fitnessClass.instructor}</span>
+                      </div>
+                      <div className="class-detail">
+                        <Clock size={14} />
+                        <span>{fitnessClass.duration}</span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
               </div>
-            )}
+              
+              {selectedClass && (
+                <div className="booking-panel">
+                  <h3 className="booking-title">Book {selectedClass.name}</h3>
+                  
+                  <div className="booking-form">
+                    <div className="form-group">
+                      <label>Select Date</label>
+                      <select 
+                        value={selectedDate} 
+                        onChange={(e) => setSelectedDate(e.target.value)}
+                        className="form-select"
+                      >
+                        <option value="">Select a date</option>
+                        {availableDates.map(date => (
+                          <option key={date} value={date}>{date}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <div className="form-group">
+                      <label>Select Time</label>
+                      <select 
+                        value={selectedTime} 
+                        onChange={(e) => setSelectedTime(e.target.value)}
+                        className="form-select"
+                        disabled={!selectedDate}
+                      >
+                        <option value="">Select a time</option>
+                        {availableTimes.map(time => (
+                          <option key={time} value={time}>{time}</option>
+                        ))}
+                      </select>
+                    </div>
+                    
+                    <button 
+                      className="book-button"
+                      disabled={!selectedDate || !selectedTime}
+                      onClick={handleBookFitness}
+                    >
+                      Book Class
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
         </div>
       </div>

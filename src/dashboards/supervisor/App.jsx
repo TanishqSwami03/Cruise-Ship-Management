@@ -3,14 +3,18 @@ import Layout from "./components/Layout"
 import StationeryOrders from "./pages/StationeryOrders"
 import Profile from "./pages/Profile"
 
+import { UserProvider } from "./contexts/UserContext";
+
 function SupervisorApp() {
   return (
-    <Routes>
-      <Route path="/" element={<Layout />}>
-        <Route index element={<StationeryOrders />} />
-        <Route path="profile" element={<Profile />} />
-      </Route>
+    <UserProvider>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route index element={<StationeryOrders />} />
+          <Route path="profile" element={<Profile />} />
+        </Route>
     </Routes>
+    </UserProvider>
   )
 }
 

@@ -1,11 +1,17 @@
 import { useState } from 'react';
 import { Clock, Coffee, Utensils, Wine, ShoppingCart, X, Plus, Minus, UtensilsCrossed } from 'lucide-react';
 
+import { useUser } from "../context/UserContext"; // To get user information
+import { db } from "../../../firebase/firebaseConfig.js"; // Assuming you have firebase.js configured with Firestore
+import { collection, addDoc, doc, getDocs, updateDoc, where, query, serverTimestamp } from "firebase/firestore"; // Firestore functions
+
 const CateringItems = ({ showConfirmation }) => {
   const [activeTab, setActiveTab] = useState('breakfast');
   const [selectedItems, setSelectedItems] = useState({});
   const [showCart, setShowCart] = useState(false);
   const [orderTotal, setOrderTotal] = useState(0);
+
+  const { user } = useUser();
   
   const menuItems = {
     breakfast: [
@@ -13,22 +19,36 @@ const CateringItems = ({ showConfirmation }) => {
         id: 'continental',
         name: 'Continental Breakfast',
         description: 'Assorted pastries, fresh fruit, yogurt, and coffee',
-        price: 15,
-        prepTime: '30-45 min'
+        price: 440,
+        prepTime: '20-30 min'
       },
       {
         id: 'american',
         name: 'American Breakfast',
         description: 'Eggs, bacon, toast, hash browns, and coffee',
-        price: 18,
+        price: 310,
         prepTime: '30-45 min'
       },
       {
         id: 'healthy',
         name: 'Healthy Start',
         description: 'Oatmeal, berries, nuts, and green tea',
-        price: 16,
-        prepTime: '30-45 min'
+        price: 370,
+        prepTime: '20-30 min'
+      },
+      {
+        id: 'vegan',
+        name: 'Vegan Breakfast Bowl',
+        description: 'Tofu scramble, avocado toast, and mixed greens',
+        price: 310,
+        prepTime: '25-35 min'
+      },
+      {
+        id: 'indian',
+        name: 'Indian Breakfast',
+        description: 'Poha, idli-sambar, and masala chai',
+        price: 340,
+        prepTime: '20-30 min'
       }
     ],
     lunch: [
@@ -36,69 +56,111 @@ const CateringItems = ({ showConfirmation }) => {
         id: 'caesar',
         name: 'Caesar Salad',
         description: 'Romaine lettuce, croutons, parmesan cheese, and Caesar dressing',
-        price: 14,
+        price: 440,
         prepTime: '20-30 min'
       },
       {
         id: 'club',
         name: 'Club Sandwich',
         description: 'Turkey, bacon, lettuce, tomato, and mayo on toasted bread',
-        price: 16,
+        price: 440,
         prepTime: '20-30 min'
       },
       {
         id: 'pasta',
         name: 'Pasta Primavera',
         description: 'Pasta with fresh vegetables in a light cream sauce',
-        price: 18,
+        price: 620,
         prepTime: '30-45 min'
-      }
+      },
+      {
+        id: 'thali',
+        name: 'Indian Veg Thali',
+        description: 'Assorted vegetarian dishes, rice, roti, dal, and dessert',
+        price: 530,
+        prepTime: '30-40 min'
+      },
+      {
+        id: 'biriyani',
+        name: 'Chicken Biryani',
+        description: 'Fragrant basmati rice with spiced chicken, served with raita',
+        price: 470,
+        prepTime: '30-40 min'
+      },
     ],
     dinner: [
       {
         id: 'steak',
         name: 'Grilled Steak',
         description: 'Prime beef steak with roasted potatoes and vegetables',
-        price: 28,
+        price: 820,
         prepTime: '40-50 min'
       },
       {
         id: 'salmon',
         name: 'Grilled Salmon',
         description: 'Fresh salmon with rice pilaf and steamed vegetables',
-        price: 24,
+        price: 730,
         prepTime: '30-40 min'
       },
       {
         id: 'chicken',
         name: 'Roasted Chicken',
         description: 'Herb-roasted chicken with mashed potatoes and gravy',
-        price: 22,
+        price: 940,
         prepTime: '40-50 min'
-      }
+      },
+      {
+        id: 'paneer',
+        name: 'Paneer Tikka Masala',
+        description: 'Indian cottage cheese in creamy tomato curry with naan',
+        price: 640,
+        prepTime: '45-60 min'
+      },
+      {
+        id: 'lobster',
+        name: 'Butter Garlic Lobster',
+        description: 'Grilled lobster tail with lemon butter sauce',
+        price: 600,
+        prepTime: '45-60 min'
+      }      
     ],
     drinks: [
       {
         id: 'wine',
         name: 'Wine Bottle',
         description: 'Selection of red or white wine',
-        price: 35,
+        price: 1600,
         prepTime: '15-20 min'
       },
       {
         id: 'cocktail',
         name: 'Cocktail',
         description: 'Handcrafted cocktail of your choice',
-        price: 12,
+        price: 460,
         prepTime: '10-15 min'
       },
       {
         id: 'smoothie',
         name: 'Fruit Smoothie',
         description: 'Blended fresh fruits with yogurt',
-        price: 8,
+        price: 650,
+        prepTime: '20-25 min'
+      },
+      {
+        id: 'espresso',
+        name: 'Espresso Shot',
+        description: 'Strong single or double espresso',
+        price: 310,
+        prepTime: '15-20 min'
+      },
+      {
+        id: 'icedtea',
+        name: 'Iced Herbal Tea',
+        description: 'Chilled hibiscus and mint infusion',
+        price: 330,
         prepTime: '10-15 min'
-      }
+      }      
     ]
   };
   
@@ -150,16 +212,83 @@ const CateringItems = ({ showConfirmation }) => {
     setShowCart(true);
   };
   
-  const handlePlaceOrder = () => {
-    showConfirmation(
-      'Order Confirmation',
-      'Your order has been confirmed and will be delivered to your cabin!',
-      () => {
-        setShowCart(false);
-        setSelectedItems({});
+  const handleBookCatering = async () => {
+    if (!user || !user.uid) {
+      console.error("User is not logged in or user ID is missing.");
+      return;
+    }
+  
+    const itemsToOrder = Object.entries(selectedItems)
+      .filter(([_, quantity]) => quantity > 0)
+      .map(([itemId, quantity]) => {
+        const item = findItemById(itemId);
+        return {
+          itemId,
+          name: item.name,
+          price: item.price,
+          quantity,
+          total: item.price * quantity,
+        };
+      });
+  
+    if (itemsToOrder.length === 0) {
+      console.error("No catering items selected.");
+      return;
+    }
+  
+    try {
+      const subtotal = orderTotal;
+      const gstAmount = subtotal * 0.18;
+      const totalAmountWithGst = subtotal + gstAmount;
+  
+      // Fetch user doc
+      const q = query(collection(db, "voyagers"), where("uid", "==", user.uid));
+      const querySnapshot = await getDocs(q);
+  
+      if (querySnapshot.empty) {
+        console.error("User document not found in 'voyagers' collection.");
+        return;
       }
-    );
+  
+      const userDocRef = querySnapshot.docs[0].ref;
+      const userData = querySnapshot.docs[0].data();
+      const currentExpense = userData.expenses || 0;
+  
+      // Update expense
+      await updateDoc(userDocRef, {
+        expenses: currentExpense + totalAmountWithGst,
+      });
+  
+      // Add catering order
+      await addDoc(collection(db, "orders"), {
+        uid: user.uid,
+        orderType: "Catering Order",
+        orderCategory: "catering",
+        orderDetails: {
+          items: itemsToOrder,
+          subtotal,
+          gst: gstAmount,
+          price: totalAmountWithGst,
+        },
+        status: "Confirmed",
+        createdAt: serverTimestamp(),
+      });
+  
+      // Confirmation
+      showConfirmation(
+        "Order Confirmed",
+        `Your catering order of ₹ ${totalAmountWithGst.toFixed(2)} has been placed successfully and will be delivered shortly to your cabin.`,
+        () => {
+          setSelectedItems({});
+          setShowCart(false);
+        }
+      );
+  
+    } catch (error) {
+      console.error("Error placing catering order:", error);
+    }
   };
+  
   
   const getTabIcon = (tab) => {
     switch (tab) {
@@ -208,7 +337,8 @@ const CateringItems = ({ showConfirmation }) => {
           
           <div className="menu-items">
             {menuItems[activeTab].map(item => (
-              <div key={item.id} className="menu-item">
+              <div key={item.id} className="menu-item menu-custom">
+                
                 <div className="menu-item-content">
                   <h3 className="menu-item-name">{item.name}</h3>
                   <p className="menu-item-description">{item.description}</p>
@@ -221,7 +351,7 @@ const CateringItems = ({ showConfirmation }) => {
                 </div>
                 
                 <div className="menu-item-actions">
-                  <div className="menu-item-price">${item.price}</div>
+                  <div className="menu-item-price">₹ {item.price}</div>
                   <div className="quantity-control">
                     <button 
                       className="quantity-btn"
@@ -245,12 +375,14 @@ const CateringItems = ({ showConfirmation }) => {
                     </button>
                   </div>
                 </div>
+
               </div>
             ))}
           </div>
           
         </div>
         
+        {/* Order Summary */}
         <div className="order-summary">
           <button 
             className="order-button"
@@ -263,6 +395,7 @@ const CateringItems = ({ showConfirmation }) => {
         </div>
       </div>
       
+      {/* Show Cart */}
       {showCart && (
         <div className="modal-overlay">
           <div className="modal">
@@ -287,7 +420,7 @@ const CateringItems = ({ showConfirmation }) => {
                     <div key={itemId} className="cart-item">
                       <div className="cart-item-info">
                         <div className="cart-item-name">{item.name}</div>
-                        <div className="cart-item-price">${item.price.toFixed(2)}</div>
+                        <div className="cart-item-price">₹ {item.price.toFixed(2)}</div>
                       </div>
                       <div className="cart-item-quantity">
                         <button 
@@ -305,7 +438,7 @@ const CateringItems = ({ showConfirmation }) => {
                         </button>
                       </div>
                       <div className="cart-item-total">
-                        ${(item.price * quantity).toFixed(2)}
+                        ₹ {(item.price * quantity).toFixed(2)}
                       </div>
                     </div>
                   );
@@ -314,8 +447,17 @@ const CateringItems = ({ showConfirmation }) => {
               
               <div className="cart-summary">
                 <div className="cart-total">
-                  <span>Total:</span>
-                  <span>${orderTotal.toFixed(2)}</span>
+                  <span>Subtotal:</span>
+                  <span>₹ {orderTotal.toFixed(2)}</span>
+                </div>
+                <div className="cart-total">
+                  <span>GST (18%):</span>
+                  <span>₹ {(orderTotal * 0.18).toFixed(2)}</span>
+                </div>
+                <hr className="cart-divider" />
+                <div className="cart-summary-line cart-total">
+                  <strong>Total:</strong>
+                  <strong>₹ {(orderTotal * 1.18).toFixed(2)}</strong>
                 </div>
               </div>
             </div>
@@ -328,7 +470,7 @@ const CateringItems = ({ showConfirmation }) => {
               </button>
               <button 
                 className="btn-primary"
-                onClick={handlePlaceOrder}
+                onClick={handleBookCatering}
               >
                 Place Order
               </button>
@@ -338,6 +480,14 @@ const CateringItems = ({ showConfirmation }) => {
       )}
       
       <style jsx>{`
+
+        .menu-custom{
+          display : flex;
+          justify-content : center;
+          margin-bottom : 50px;
+          margin-top : 30px;
+        }
+
         .catering-page {
           padding: 24px;
         }
@@ -619,8 +769,10 @@ const CateringItems = ({ showConfirmation }) => {
         
         @media (max-width: 768px) {
           .menu-item {
+            display : flex
             flex-direction: column;
             gap: 16px;
+            justify-content: space-between;
           }
           
           .menu-item-actions {

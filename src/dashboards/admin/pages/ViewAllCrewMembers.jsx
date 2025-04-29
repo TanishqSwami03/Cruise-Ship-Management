@@ -8,14 +8,14 @@ import DataTable from "../components/DataTable"
 import { collection, getDocs, deleteDoc, doc, onSnapshot} from 'firebase/firestore'
 import { db } from "../../../firebase/firebaseConfig.js"
 
-const ViewAllVoyagers = () => {
+const ViewAllCrewMembers = () => {
   const [voyagers, setVoyagers] = useState([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
     // Start real-time listener
     const unsubscribe = onSnapshot(
-      collection(db, "voyagers"),
+      collection(db, "crewMembers"),
       (snapshot) => {
         const data = snapshot.docs.map((doc) => ({
           id: doc.id,
@@ -25,7 +25,7 @@ const ViewAllVoyagers = () => {
         setLoading(false)
       },
       (error) => {
-        console.error("Error listening to voyagers:", error)
+        console.error("Error listening to crew members:", error)
         setLoading(false)
       }
     )
@@ -37,7 +37,7 @@ const ViewAllVoyagers = () => {
   const handleDelete = async (id) => {
     if (window.confirm("Are you sure you want to delete this crew member?")) {
       try {
-        await deleteDoc(doc(db, "voyager", id))
+        await deleteDoc(doc(db, "crewMembers", id))
         setVoyagers(voyagers.filter(voyager => voyager.id !== id))
       } catch (error) {
         console.error("Error deleting crew member:", error)
@@ -46,61 +46,66 @@ const ViewAllVoyagers = () => {
   }
 
   const columns = [
-    { key: "name", header: "Voyager Name" },
-    { key: "cabin", header: "Cabin" },
-    { key: "package", header: "Package" },
-    { key: "checkIn", header: "Check In" },
-    { key: "checkOut", header: "Check Out" },
-    // { key: "gender", header: "Gender" },
-    {
-      key: "Gender",
-      header: "Gender",
-      render: (voyager) => {
-        let badgeClass = "badge-danger"; // Default badge class
-    
-        // Assign different colors based on gender
-        if (voyager.gender === "Male") {
-          badgeClass = "badge-blue"; // Blue for male
-        } else if (voyager.gender === "Female") {
-          badgeClass = "badge-pink"; // Pink for female
-        }
-    
-        return <span className={`badge ${badgeClass}`}>{voyager.gender}</span>;
-      },
-    }
+    { key: "name", header: "Name" },
+    { key: "role", header: "Role" },
+    { key: "startDate", header: "Start Date" },
+    { key: "email", header: "Email" },
+    { key : "address", header : "Address"},
+    { key : "phone", header : "Phone"},
   ]
+
+  // const filters = [
+  //   {
+  //     name: "package",
+  //     label: "Package",
+  //     options: [
+  //       { value: "Standard", label: "Standard" },
+  //       { value: "Deluxe", label: "Deluxe" },
+  //       { value: "Premium", label: "Premium" },
+  //     ],
+  //   },
+  //   {
+  //     name: "status",
+  //     label: "Status",
+  //     options: [
+  //       { value: "Active", label: "Active" },
+  //       { value: "Pending", label: "Pending" },
+  //       { value: "Cancelled", label: "Cancelled" },
+  //     ],
+  //   },
+  // ]
+
 
 
   return (
     <div>
-      <Header title="All Voyagers" subtitle="Manage passengers on your cruise" />
+      <Header title="All Crew Members" subtitle="Manage crew members on your cruise" />
 
       <div className="mb-6 flex justify-between items-center">
-        <h2 className="text-xl font-bold text-gray-800">Registered Voyagers</h2>
-        <Link to="/admin/voyagers/add" className="btn-primary flex items-center">
+        <h2 className="text-xl font-bold text-gray-800">Registered Crew Members</h2>
+        <Link to="/admin/crewMember/add" className="btn-primary flex items-center">
           <Plus className="w-4 h-4 mr-1" />
-          Register New Voyager
+          Register New Crew Member
         </Link>
       </div>
 
       {loading ? (
         <div className="text-center py-10">
           <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500"></div>
-          <p className="mt-2 text-gray-500">Loading voyagers...</p>
+          <p className="mt-2 text-gray-500">Loading crew members...</p>
         </div>
       ) : (
         <DataTable
           data={voyagers}
           columns={columns}
           onDelete={handleDelete}
-          editPath="/admin/voyagers/edit"
+          editPath="/admin/crewMember/edit"
           searchPlaceholder="Search voyagers..."
           // filters={filters}
         />
       )}
-
     </div>
   )
 }
 
-export default ViewAllVoyagers
+export default ViewAllCrewMembers

@@ -1,42 +1,48 @@
 import { useState } from 'react';
 import { Clock, Star } from 'lucide-react';
 
+import { useUser } from "../context/UserContext"; // To get user information
+import { db } from "../../../firebase/firebaseConfig.js"; // Assuming you have firebase.js configured with Firestore
+import { collection, addDoc, doc, getDocs, updateDoc, where, query, serverTimestamp } from "firebase/firestore"; // Firestore functions
+
 const MovieTickets = ({ showConfirmation }) => {
   const [selectedMovie, setSelectedMovie] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [selectedShowtime, setSelectedShowtime] = useState(null);
   const [ticketCount, setTicketCount] = useState(1);
+
+  const { user } = useUser();
   
   const movies = [
     {
-      id: 'ocean-adventure',
-      title: "Ocean's Adventure",
-      genre: 'Action/Adventure',
-      rating: 4.5,
-      duration: '2h 15m',
-      description: 'An epic adventure on the high seas with stunning visuals and an engaging storyline.',
-      showtimes: ['10:00 AM', '2:30 PM', '7:00 PM'],
-      rating_code: 'PG-13'
+      id: 'the-accountant-2',
+      title: "The Accountant 2",
+      genre: 'Action/Thriller',
+      image: 'https://m.media-amazon.com/images/M/MV5BYjFiY2I0NTEtNjdjNy00MTljLThkOWYtMzNiYjYyMDcxYjhkXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg',
+      rating: 7.2,
+      duration: '2h 5m',
+      showtimes: ['10:00 AM', '5:00 PM'],
+      screen: 'S-2'
     },
     {
-      id: 'midnight-cruise',
-      title: 'Midnight Cruise',
-      genre: 'Thriller',
-      rating: 4.2,
-      duration: '1h 55m',
-      description: 'A suspenseful thriller set aboard a luxury cruise ship where nothing is as it seems.',
-      showtimes: ['11:30 AM', '3:00 PM', '8:30 PM'],
-      rating_code: 'R'
+      id: 'dune-part-2',
+      title: 'Dune Part-2',
+      genre: 'Sci-fi/Adventure',
+      image: 'https://m.media-amazon.com/images/M/MV5BNTc0YmQxMjEtODI5MC00NjFiLTlkMWUtOGQ5NjFmYWUyZGJhXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg',
+      rating: 8.5,
+      duration: '2h 46m',
+      showtimes: ['11:30 AM', '3:00 PM'],
+      screen: 'S-1'
     },
     {
-      id: 'love-on-deck',
-      title: 'Love on Deck',
-      genre: 'Romance',
-      rating: 4,
-      duration: '1h 45m',
-      description: 'A heartwarming romance that blossoms between two passengers during a Mediterranean cruise.',
-      showtimes: ['12:00 PM', '4:15 PM', '9:00 PM'],
-      rating_code: 'PG'
+      id: 'chhavva',
+      title: 'Chhavva',
+      genre: 'Adventure/Drama',
+      image: 'https://m.media-amazon.com/images/M/MV5BMDMyZjFmZTctNDAxYi00MWM3LWJiYmItM2VhNWZiM2IwNjNlXkEyXkFqcGc@._V1_FMjpg_UX1000_.jpg',
+      rating: 7.4,
+      duration: '2h 35m',
+      showtimes: ['09:00 AM', '4:15 PM'],
+      screen: 'S-2'
     }
   ];
   
@@ -49,17 +55,74 @@ const MovieTickets = ({ showConfirmation }) => {
     setSelectedShowtime(showtime);
   };
   
-  const handleBookTickets = () => {
-    showConfirmation(
-      'Booking Confirmed',
-      `Your tickets for ${selectedMovie.title} at ${selectedShowtime} have been booked successfully!`,
-      () => {
-        setShowModal(false);
-        setSelectedMovie(null);
-        setSelectedShowtime(null);
-        setTicketCount(1);
+  const handleBookMovie = async () => {
+    console.log("User object:", user);
+  
+    if (selectedMovie && selectedShowtime) {
+      if (!user || !user.uid) {
+        console.error("User is not logged in or user ID is missing.");
+        return;
       }
-    );
+  
+      console.log(user.uid);
+  
+      try {
+        const gstAmount = ((selectedMovie.price * 18) / 100);
+        const totalAmount = selectedMovie.price + gstAmount;
+  
+        // Fetch user's current expense from the 'voyagers' collection
+        const q = query(collection(db, "voyagers"), where("uid", "==", user.uid));
+        const querySnapshot = await getDocs(q);
+  
+        if (querySnapshot.empty) {
+          console.error("User document not found in 'voyagers' collection.");
+          return;
+        }
+  
+        const userDocRef = querySnapshot.docs[0].ref;
+        const userData = querySnapshot.docs[0].data();
+        const currentExpense = userData.expenses || 0;
+  
+        // Update user's expense
+        await updateDoc(userDocRef, {
+          expenses: currentExpense + totalAmount,
+        });
+  
+        // Instead of partyBookings, add to the common orders collection
+        await addDoc(collection(db, "orders"), {
+          uid: user.uid,
+          orderType: "Movie Booking", 
+          orderCategory: "movie",
+          orderDetails: {
+            movieId: selectedMovie.id,
+            movieName: selectedMovie.title,
+            time: selectedShowtime,
+            duration: selectedMovie.duration,
+            price: 0,
+            ticketCount: ticketCount,
+            screen : selectedMovie.screen,
+            date: new Date().toLocaleDateString(),
+          },
+          status: "Confirmed",
+          createdAt: serverTimestamp(),
+        });
+  
+        // Show confirmation
+        showConfirmation(
+          'Booking Confirmation',
+          `${selectedMovie.ticketCount} tickets for ${selectedMovie.name} has been booked today at ${selectedShowtime}`,
+          () => {
+            setSelectedMovie(null);
+            setSelectedShowtime('');
+            setTicketCount('');
+          }
+        );
+      } catch (error) {
+        console.error("Error booking party hall:", error);
+      }
+    } else {
+      console.error("Please select a service, date, and time before booking.");
+    }
   };
   
   const renderStars = (rating) => {
@@ -94,7 +157,7 @@ const MovieTickets = ({ showConfirmation }) => {
             <div key={movie.id} className="movie-card">
               <div className="movie-poster">
                 <div className="rating-badge">{movie.rating_code}</div>
-                <img src={`/placeholder.svg?height=200&width=300`} alt={movie.title} />
+                <img src={movie.image} alt={movie.title} />
               </div>
               <div className="movie-details">
                 <h3 className="movie-title">{movie.title}</h3>
@@ -105,7 +168,6 @@ const MovieTickets = ({ showConfirmation }) => {
                     <span>{movie.duration}</span>
                   </div>
                 </div>
-                <p className="movie-description">{movie.description}</p>
                 <div className="movie-rating">
                   <div className="stars">{renderStars(movie.rating)}</div>
                   <span className="rating-value">{movie.rating}</span>
@@ -122,7 +184,7 @@ const MovieTickets = ({ showConfirmation }) => {
         </div>
       </div>
       
-      {showModal && (
+      {showModal && selectedMovie && (
         <div className="modal-overlay" onClick={() => setShowModal(false)}>
           <div className="modal" onClick={e => e.stopPropagation()}>
             <div className="modal-header">
@@ -185,14 +247,6 @@ const MovieTickets = ({ showConfirmation }) => {
                       <span>Showtime:</span>
                       <span>{selectedShowtime}</span>
                     </div>
-                    <div className="summary-row">
-                      <span>Tickets:</span>
-                      <span>{ticketCount} x $12.00</span>
-                    </div>
-                    <div className="summary-row total">
-                      <span>Total:</span>
-                      <span>${(ticketCount * 12).toFixed(2)}</span>
-                    </div>
                   </div>
                 </div>
               )}
@@ -208,7 +262,7 @@ const MovieTickets = ({ showConfirmation }) => {
                   </button>
                   <button 
                     className="btn-primary"
-                    onClick={handleBookTickets}
+                    onClick={handleBookMovie}
                   >
                     Book Tickets
                   </button>
@@ -225,6 +279,7 @@ const MovieTickets = ({ showConfirmation }) => {
           </div>
         </div>
       )}
+
       
       <style jsx>{`
         .movie-tickets-page {

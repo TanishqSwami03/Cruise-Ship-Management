@@ -1,11 +1,37 @@
-import { Link, useLocation } from 'react-router-dom';
-import { Home, Scissors, Dumbbell, PartyPopper, User, LogOut, Utensils, NotebookPen, Clapperboard } from 'lucide-react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Home, Scissors, Dumbbell, PartyPopper, User, LogOut, Utensils, NotebookPen, Clapperboard, Folder, Folders, Package } from 'lucide-react';
+
+import { useUser } from '../context/UserContext'; // Adjust the import path if necessary
+import { getAuth, signOut } from 'firebase/auth';
 
 const Sidebar = ({ collapsed }) => {
   const location = useLocation();
+  const navigate = useNavigate()
+
+  const { logout } = useUser();
 
   const isActive = (path) => {
     return location.pathname === path;
+  };
+
+  const handleLogout = () => {
+    // Step 1: Sign out from Firebase
+    const auth = getAuth();
+    signOut(auth)
+      .then(() => {
+        // Step 2: Call logout function from UserContext
+        logout();
+
+        // Step 3: Show success alert
+        alert("Logged out successfully");
+
+        // Step 4: Navigate to login page
+        navigate('/');
+      })
+      .catch((error) => {
+        console.error('Error during logout:', error);
+        alert('An error occurred while logging out. Please try again.');
+      });
   };
 
   return (
@@ -13,12 +39,8 @@ const Sidebar = ({ collapsed }) => {
       <div className="sidebar-header">
         <Link to="/voyager/" className="logo">
           <div className="logo-icon">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M19 7H5C3.89543 7 3 7.89543 3 9V18C3 19.1046 3.89543 20 5 20H19C20.1046 20 21 19.1046 21 18V9C21 7.89543 20.1046 7 19 7Z" stroke="#FF4D79" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              <path d="M16 20V5C16 4.46957 15.7893 3.96086 15.4142 3.58579C15.0391 3.21071 14.5304 3 14 3H10C9.46957 3 8.96086 3.21071 8.58579 3.58579C8.21071 3.96086 8 4.46957 8 5V20" stroke="#FF4D79" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
+            <img src='/logo.png' alt="Got Cooked !" />
           </div>
-          <span className="logo-text">Voyager</span>
         </Link>
       </div>
       
@@ -68,6 +90,13 @@ const Sidebar = ({ collapsed }) => {
                 <span>Book Party Hall</span>
               </Link>
             </li>
+            <hr className="cart-divider" style={{margin: '10px 0', border: 'none', borderTop: '1px solid #ccc'}}/> 
+            <li className={`menu-item ${isActive('/party') ? 'active' : ''}`}>
+              <Link to="/voyager/orders">
+                <Package size={18} />
+                <span>Your Orders</span>
+              </Link>
+            </li>
           </ul>
         </div>
         
@@ -80,7 +109,7 @@ const Sidebar = ({ collapsed }) => {
               </Link>
             </li>
             <li className="menu-item">
-              <Link to="/voyager/">
+              <Link onClick={handleLogout}>
                 <LogOut size={18} />
                 <span>Logout</span>
               </Link>
@@ -105,7 +134,7 @@ const Sidebar = ({ collapsed }) => {
         }
         
         .sidebar.collapsed {
-          width: 60px;
+          width: 80px;
         }
         
         .sidebar-header {
@@ -114,7 +143,7 @@ const Sidebar = ({ collapsed }) => {
         }
         
         .logo {
-          display: flex;
+          display: block;
           align-items: center;
           gap: 8px;
         }
@@ -123,6 +152,7 @@ const Sidebar = ({ collapsed }) => {
           display: flex;
           align-items: center;
           justify-content: center;
+          width : 190px
         }
         
         .logo-text {

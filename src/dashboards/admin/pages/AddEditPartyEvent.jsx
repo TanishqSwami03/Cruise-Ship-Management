@@ -92,7 +92,7 @@ const AddEditPartyEvent = () => {
         user={user}
       />
 
-      <button onClick={() => navigate("/party-hall")} className="flex items-center btn-primary mb-6">
+      <button onClick={() => navigate("/admin/party-hall")} className="flex items-center btn-primary mb-6">
         <ArrowLeft className="w-4 h-4 mr-1" />
         Back to Party Hall
       </button>
@@ -217,7 +217,7 @@ const AddEditPartyEvent = () => {
             Schedule & Location
           </h3>
 
-          {/* Date, Time & Location */}
+          {/* Date, Time, Location & No. of guests */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 
             {/* Date */}
@@ -275,6 +275,7 @@ const AddEditPartyEvent = () => {
               </select>
             </div>
 
+            {/* No. of guests */}
             <div className="form-group">
               <label htmlFor="guests" className="form-label flex items-center">
                 <Users className="w-4 h-4 mr-1 text-gray-500" />

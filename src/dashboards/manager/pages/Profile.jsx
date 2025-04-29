@@ -4,7 +4,7 @@ import { User, Mail, Phone, Calendar, MapPin, Camera } from "lucide-react"
 function Profile() {
   const [isEditing, setIsEditing] = useState(false)
   const [formData, setFormData] = useState({
-    firstName: "Emma",
+    firstName: "Emmaaa",
     lastName: "Johnson",
     email: "emma.johnson@example.com",
     phone: "+1 (555) 123-4567",

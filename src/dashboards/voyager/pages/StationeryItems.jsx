@@ -1,53 +1,59 @@
 import { useState } from 'react';
 import { Plus, Minus, ShoppingCart, X } from 'lucide-react';
 
+import { useUser } from "../context/UserContext"; // To get user information
+import { db } from "../../../firebase/firebaseConfig.js"; // Assuming you have firebase.js configured with Firestore
+import { collection, addDoc, doc, getDocs, updateDoc, where, query, serverTimestamp } from "firebase/firestore"; // Firestore functions
+
 const StationeryItems = ({ showConfirmation }) => {
   const [selectedItems, setSelectedItems] = useState({});
   const [showCart, setShowCart] = useState(false);
   const [orderTotal, setOrderTotal] = useState(0);
+
+  const { user } = useUser();
   
   const stationeryItems = [
     {
       id: 'notebook',
       name: 'Premium Notebook',
       description: 'High-quality hardcover notebook with 200 pages',
-      price: 12,
-      image: '/placeholder.svg?height=100&width=100'
+      price: 360,
+      image: 'https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcTRIzcg4vFVmwMfEskvAzrjHe_oVeMnOKxc86aiwZHcM5Z7XcWhaPjKEIKM6-2K5txMVtv1BDKy0b0XAZEPg0S9Y274X955EGZfzD8VuTb_Wqxe-O8HQRSttcQX'
     },
     {
       id: 'pens',
       name: 'Ballpoint Pen Set',
       description: 'Set of 5 premium ballpoint pens in different colors',
-      price: 8,
-      image: '/placeholder.svg?height=100&width=100'
+      price: 400,
+      image: 'https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcSk90dWg7YDV7UU-_nsgwrtYlnYsWp9EhiwOX_0wIWdjV3A1DCMfjwjhFom4WeyE1z9jfB6MZPLVikY1p0xXRSGT2RTb7J6HmBWqg73miop8EsQOki8fIsD'
     },
     {
       id: 'markers',
       name: 'Highlighter Set',
       description: 'Set of 6 fluorescent highlighters for marking important text',
-      price: 10,
-      image: '/placeholder.svg?height=100&width=100'
+      price: 280,
+      image: 'https://encrypted-tbn1.gstatic.com/shopping?q=tbn:ANd9GcQn5jX550413hZZfUEuiupcJ1OnUbi7fwaRTw6n6cplD6muR_GsALcLnLwz65EgBsOFMPkhEinek4nbOwlaekAUIWeI29K22wjok-9Q2vQtbnf5p3eIFJEn'
     },
     {
       id: 'sticky',
       name: 'Sticky Notes',
       description: 'Pack of colorful sticky notes in various sizes',
-      price: 6,
-      image: '/placeholder.svg?height=100&width=100'
+      price: 90,
+      image: 'https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcR81JOpNkg9hqXW_JOTXI0RiaUFLLU_mR44SIRQ9WyM-1-irDNxKjXxzSCUE_Rf1mRJQ2NG9TjdAXDLKXIZIrDold_UM5NkeDQ19JSB_HHkhs7A8fjo0E_cZQ'
     },
     {
       id: 'folder',
       name: 'Document Folder',
       description: 'Elegant leather document folder with multiple compartments',
-      price: 15,
-      image: '/placeholder.svg?height=100&width=100'
+      price: 340,
+      image: 'https://encrypted-tbn0.gstatic.com/shopping?q=tbn:ANd9GcSLo_6j4rpflIpVV4hc2svx9yMfhwljKB3DwkL22r_TIet4mBIMnjU666RtiIv3K7EnxgZwR5EA_DWn95Ife0VG7pTfcvOb_AZUTCaReJJK_THeWU1mJJRr'
     },
     {
       id: 'calendar',
       name: 'Desk Calendar',
       description: 'Compact desk calendar with daily inspirational quotes',
-      price: 9,
-      image: '/placeholder.svg?height=100&width=100'
+      price: 330,
+      image: 'https://encrypted-tbn2.gstatic.com/shopping?q=tbn:ANd9GcQYQs-XHoFy2Z7U75Jwd1Lrp593GUkTXYZoLndfNrmYvOzvQkvpOTcK5Y_e0T1sTXA6CN4jnmxVA5Hk-NlGow3G-7e4iRg7994JCHGkbl_eGE7gvR5x2-ad'
     }
   ];
   
@@ -83,16 +89,85 @@ const StationeryItems = ({ showConfirmation }) => {
     setShowCart(true);
   };
   
-  const handlePlaceOrder = () => {
-    showConfirmation(
-      'Order Confirmation',
-      'Your stationery items have been ordered and will be delivered to your cabin!',
-      () => {
-        setShowCart(false);
-        setSelectedItems({});
+  const handleBookStationary = async () => {
+    if (!user || !user.uid) {
+      console.error("User is not logged in or user ID is missing.");
+      return;
+    }
+  
+    // Prepare selected items with quantity > 0 and valid item data
+    const itemsToOrder = Object.entries(selectedItems)
+      .filter(([_, quantity]) => quantity > 0)
+      .map(([itemId, quantity]) => {
+        const item = stationeryItems.find(item => item.id === itemId);
+        if (!item) return null;
+        return {
+          itemId,
+          name: item.name,
+          price: item.price,
+          quantity,
+          total: +(item.price * quantity).toFixed(2),
+        };
+      })
+      .filter(Boolean); // remove null entries
+  
+    if (itemsToOrder.length === 0) {
+      console.error("No valid items selected to order.");
+      return;
+    }
+  
+    // Calculate GST and total
+    const gstAmount = +(orderTotal * 0.18).toFixed(2);
+    const totalAmountWithGst = +(orderTotal + gstAmount).toFixed(2);
+  
+    try {
+      // Get user document from 'voyagers'
+      const q = query(collection(db, "voyagers"), where("uid", "==", user.uid));
+      const querySnapshot = await getDocs(q);
+  
+      if (querySnapshot.empty) {
+        console.error("User document not found in 'voyagers' collection.");
+        return;
       }
-    );
-  };
+  
+      const userDocRef = querySnapshot.docs[0].ref;
+      const userData = querySnapshot.docs[0].data();
+      const currentExpense = userData.expenses || 0;
+  
+      // Update user's total expenses
+      await updateDoc(userDocRef, {
+        expenses: +(currentExpense + totalAmountWithGst).toFixed(2),
+      });
+  
+      // Create new order document
+      await addDoc(collection(db, "orders"), {
+        uid: user.uid,
+        orderType: "Stationery Order",
+        orderCategory: "stationary",
+        orderDetails: {
+          items: itemsToOrder,
+          subtotal: +orderTotal.toFixed(2),
+          gst: gstAmount,
+          price: totalAmountWithGst,
+        },
+        status: "Confirmed",
+        createdAt: serverTimestamp(),
+      });
+  
+      // UI feedback
+      showConfirmation(
+        "Order Placed",
+        `Your stationery order of ₹ ${totalAmountWithGst.toFixed(2)} has been placed successfully and will be delivered shortly to your cabin.`,
+        () => {
+          setSelectedItems({});
+          setShowCart(false);
+        }
+      );
+  
+    } catch (error) {
+      console.error("Error placing stationery order:", error);
+    }
+  };  
   
   const totalItems = Object.values(selectedItems).reduce((sum, qty) => sum + qty, 0);
   
@@ -111,7 +186,7 @@ const StationeryItems = ({ showConfirmation }) => {
               <div className="item-details">
                 <h3 className="item-name">{item.name}</h3>
                 <p className="item-description">{item.description}</p>
-                <div className="item-price">${item.price.toFixed(2)}</div>
+                <div className="item-price">₹ {item.price.toFixed(2)}</div>
               </div>
               <div className="item-actions">
                 <div className="quantity-control">
@@ -171,7 +246,7 @@ const StationeryItems = ({ showConfirmation }) => {
                     <div key={itemId} className="cart-item">
                       <div className="cart-item-info">
                         <div className="cart-item-name">{item.name}</div>
-                        <div className="cart-item-price">${item.price.toFixed(2)}</div>
+                        <div className="cart-item-price">₹ {item.price.toFixed(2)}</div>
                       </div>
                       <div className="cart-item-quantity">
                         <button 
@@ -189,7 +264,7 @@ const StationeryItems = ({ showConfirmation }) => {
                         </button>
                       </div>
                       <div className="cart-item-total">
-                        ${(item.price * quantity).toFixed(2)}
+                        ₹ {(item.price * quantity).toFixed(2)}
                       </div>
                     </div>
                   );
@@ -198,8 +273,17 @@ const StationeryItems = ({ showConfirmation }) => {
               
               <div className="cart-summary">
                 <div className="cart-total">
-                  <span>Total:</span>
-                  <span>${orderTotal.toFixed(2)}</span>
+                  <span>Subtotal:</span>
+                  <span>₹ {orderTotal.toFixed(2)}</span>
+                </div>
+                <div className="cart-total">
+                  <span>GST (18%):</span>
+                  <span>₹ {(orderTotal * 0.18).toFixed(2)}</span>
+                </div>
+                <hr className="cart-divider" /> 
+                <div className="cart-summary-line cart-total">
+                  <strong>Total:</strong>
+                  <strong>₹ {(orderTotal * 1.18).toFixed(2)}</strong>
                 </div>
               </div>
             </div>
@@ -212,7 +296,7 @@ const StationeryItems = ({ showConfirmation }) => {
               </button>
               <button 
                 className="btn-primary"
-                onClick={handlePlaceOrder}
+                onClick={handleBookStationary}
               >
                 Place Order
               </button>
@@ -488,6 +572,7 @@ const StationeryItems = ({ showConfirmation }) => {
           cursor: pointer;
         }
       `}</style>
+
     </div>
   );
 };

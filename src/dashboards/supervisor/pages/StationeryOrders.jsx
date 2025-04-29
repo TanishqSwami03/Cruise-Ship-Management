@@ -1,5 +1,3 @@
-"use client"
-
 import { useState } from "react"
 import { Search, Filter } from "lucide-react"
 import StatusBadge from "../components/StatusBadge"
@@ -182,7 +180,7 @@ function StationeryOrders() {
             </select>
           </div>
 
-          <div className="flex items-center">
+          {/* <div className="flex items-center">
             <svg
               className="h-5 w-5 text-gray-400 mr-2"
               viewBox="0 0 24 24"
@@ -209,7 +207,7 @@ function StationeryOrders() {
               <option value="Standard">Standard</option>
               <option value="Premium">Premium</option>
             </select>
-          </div>
+          </div> */}
         </div>
       </div>
 

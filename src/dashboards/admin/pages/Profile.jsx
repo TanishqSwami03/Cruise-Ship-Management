@@ -1,47 +1,64 @@
-import { useState } from "react"
-import { User, Mail, Phone, MapPin, Save, Shield, Briefcase, UserRoundPen } from "lucide-react"
-import Header from "../components/Header"
+import { useState, useEffect } from "react";
+import { User, Mail, Phone, MapPin, Save, Shield, Briefcase, UserRoundPen } from "lucide-react";
+import Header from "../components/Header";
+import { useUser } from "../contexts/UserContext"; // NEW: import user context
 
-const Profile = ({ user, setUser }) => {
+const Profile = () => {
+  const { user, setUser } = useUser(); // get from context
+
   const [formData, setFormData] = useState({
-    name: user.name,
-    email: user.email,
-    phone: user.phone,
-    address: user.address,
-    avatar: user.avatar,
-  })
+    name: "",
+    email: "",
+    phone: "",
+    address: "",
+    avatar: "",
+  });
 
-  const [saving, setSaving] = useState(false)
+  const [saving, setSaving] = useState(false);
+
+  // initialize formData when user is available
+  useEffect(() => {
+    if (user) {
+      setFormData({
+        name: user.name || "",
+        email: user.email || "",
+        phone: user.phone || "",
+        address: user.address || "",
+        avatar: user.avatar || "",
+      });
+    }
+  }, [user]);
 
   const handleChange = (e) => {
-    const { name, value } = e.target
-    setFormData({
-      ...formData,
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
       [name]: value,
-    })
-  }
+    }));
+  };
 
   const handleSubmit = (e) => {
-    e.preventDefault()
-    setSaving(true)
+    e.preventDefault();
+    setSaving(true);
 
     // Simulate API call to save data
     setTimeout(() => {
-      setUser({
-        ...user,
-        ...formData,
-      })
-      setSaving(false)
-      // Show success message
-      alert("Profile updated successfully!")
-    }, 800)
-  }
+      const updatedUser = { ...user, ...formData };
+      setUser(updatedUser);
+      localStorage.setItem("userData", JSON.stringify(updatedUser)); // save back to localStorage
+      setSaving(false);
+      alert("Profile updated successfully!");
+    }, 800);
+  };
+
+  if (!user) return null; // safe fallback until user is loaded
 
   return (
     <div>
-      <Header title="Your Profile" subtitle="Manage your account information" user={user} />
+      <Header title="Your Profile" subtitle="Manage your account information" />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Sidebar */}
         <div className="md:col-span-1">
           <div className="form-section">
             <div className="flex flex-col items-center">
@@ -72,9 +89,9 @@ const Profile = ({ user, setUser }) => {
           </div>
         </div>
 
+        {/* Form */}
         <div className="md:col-span-2">
           <form onSubmit={handleSubmit}>
-            
             {/* Personal Info */}
             <div className="form-section">
               <h3 className="form-section-title flex items-center">
@@ -82,7 +99,6 @@ const Profile = ({ user, setUser }) => {
                 Personal Information
               </h3>
 
-              {/* Full Name */}
               <div className="form-group">
                 <label htmlFor="name" className="form-label">
                   <UserRoundPen className="w-4 h-4 mr-1 text-gray-500" />
@@ -101,10 +117,8 @@ const Profile = ({ user, setUser }) => {
                 </div>
               </div>
 
-              {/* Email Address & Phone Number */}
+              {/* Email & Phone */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
-                
-                {/* Email */}
                 <div className="form-group">
                   <label htmlFor="email" className="form-label">
                     <Mail className="w-4 h-4 mr-1 text-gray-500" />
@@ -123,7 +137,6 @@ const Profile = ({ user, setUser }) => {
                   </div>
                 </div>
 
-                {/* Phone Number */}
                 <div className="form-group">
                   <label htmlFor="phone" className="form-label">
                     <Phone className="w-4 h-4 mr-1 text-gray-500" />
@@ -141,19 +154,16 @@ const Profile = ({ user, setUser }) => {
                     />
                   </div>
                 </div>
-                
               </div>
-
             </div>
 
-            {/* Contact Details */}
+            {/* Contact Info */}
             <div className="form-section">
               <h3 className="form-section-title flex items-center">
                 <MapPin className="w-5 h-5 mr-2 text-pink-500" />
                 Contact Details
               </h3>
 
-              {/* Address */}
               <div className="form-group">
                 <label htmlFor="address" className="form-label">
                   Address
@@ -169,9 +179,9 @@ const Profile = ({ user, setUser }) => {
                   ></textarea>
                 </div>
               </div>
-
             </div>
 
+            {/* Avatar */}
             <div className="form-section">
               <h3 className="form-section-title flex items-center">
                 <Shield className="w-5 h-5 mr-2 text-pink-500" />
@@ -215,7 +225,7 @@ const Profile = ({ user, setUser }) => {
         </div>
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Profile
+export default Profile;

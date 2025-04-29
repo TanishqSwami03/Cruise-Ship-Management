@@ -6,24 +6,29 @@ import ServiceCard from "../components/ServiceCard"
 import ActionCard from "../components/ActionCard"
 import "../index.css"
 
-const Dashboard = ({ user }) => {
-  const [stats, setStats] = useState({
-    cateringItems: 0,
-    stationeryItems: 0,
-    registeredVoyagers: 0,
-  })
+// Firebase
+import { db } from '../../../firebase/firebaseConfig.js'; // Adjust the import path if needed
+import { collection, getDocs } from 'firebase/firestore';
 
-  // Simulate loading data
+const Dashboard = ({ user }) => {
+  const [totalVoyagers, setTotalVoyagers] = useState(0);
+  const [loading, setLoading] = useState(true); // Loading state
+  const [error, setError] = useState(null); // Error state
+
   useEffect(() => {
-    // In a real app, this would be an API call
-    setTimeout(() => {
-      setStats({
-        cateringItems: 42,
-        stationeryItems: 28,
-        registeredVoyagers: 1248,
-      })
-    }, 500)
-  }, [])
+    // Fetch the total number of voyagers from Firestore
+    const fetchVoyagersCount = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, 'voyagers'));
+        setTotalVoyagers(querySnapshot.size); // Get the number of documents
+      } catch (error) {
+        console.error("Error fetching voyagers count: ", error);
+      }
+    };
+
+    fetchVoyagersCount();  // Call the function when the component mounts
+  }, []);
+
 
   return (
     <div>
@@ -37,7 +42,7 @@ const Dashboard = ({ user }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <StatCard
           title="Catering Items"
-          count={stats.cateringItems}
+          // count={stats.cateringItems}
           description="Total menu items available"
           icon={<Utensils className="w-6 h-6" />}
           linkText="View all items"
@@ -45,7 +50,7 @@ const Dashboard = ({ user }) => {
         />
         <StatCard
           title="Stationery Items"
-          count={stats.stationeryItems}
+          // count={stats.stationeryItems}
           description="Total stationery products"
           icon={<FileText className="w-6 h-6" />}
           linkText="View all items"
@@ -53,7 +58,7 @@ const Dashboard = ({ user }) => {
         />
         <StatCard
           title="Registered Voyagers"
-          count={stats.registeredVoyagers}
+          count={totalVoyagers}
           description="Active voyagers on cruise"
           icon={<Users className="w-6 h-6" />}
           linkText="View all voyagers"
