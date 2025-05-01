@@ -20,35 +20,40 @@ const CateringItems = ({ showConfirmation }) => {
         name: 'Continental Breakfast',
         description: 'Assorted pastries, fresh fruit, yogurt, and coffee',
         price: 440,
-        prepTime: '20-30 min'
+        prepTime: '20-30 min',
+        type : 'breakfast',
       },
       {
         id: 'american',
         name: 'American Breakfast',
         description: 'Eggs, bacon, toast, hash browns, and coffee',
         price: 310,
-        prepTime: '30-45 min'
+        prepTime: '30-45 min',
+        type : 'breakfast',
       },
       {
         id: 'healthy',
         name: 'Healthy Start',
         description: 'Oatmeal, berries, nuts, and green tea',
         price: 370,
-        prepTime: '20-30 min'
+        prepTime: '20-30 min',
+        type : 'breakfast',
       },
       {
         id: 'vegan',
         name: 'Vegan Breakfast Bowl',
         description: 'Tofu scramble, avocado toast, and mixed greens',
         price: 310,
-        prepTime: '25-35 min'
+        prepTime: '25-35 min',
+        type : 'breakfast',
       },
       {
         id: 'indian',
         name: 'Indian Breakfast',
         description: 'Poha, idli-sambar, and masala chai',
         price: 340,
-        prepTime: '20-30 min'
+        prepTime: '20-30 min',
+        type : 'breakfast',
       }
     ],
     lunch: [
@@ -57,35 +62,40 @@ const CateringItems = ({ showConfirmation }) => {
         name: 'Caesar Salad',
         description: 'Romaine lettuce, croutons, parmesan cheese, and Caesar dressing',
         price: 440,
-        prepTime: '20-30 min'
+        prepTime: '20-30 min',
+        type : 'lunch',
       },
       {
         id: 'club',
         name: 'Club Sandwich',
         description: 'Turkey, bacon, lettuce, tomato, and mayo on toasted bread',
         price: 440,
-        prepTime: '20-30 min'
+        prepTime: '20-30 min',
+        type : 'lunch',
       },
       {
         id: 'pasta',
         name: 'Pasta Primavera',
         description: 'Pasta with fresh vegetables in a light cream sauce',
         price: 620,
-        prepTime: '30-45 min'
+        prepTime: '30-45 min',
+        type : 'lunch',
       },
       {
         id: 'thali',
         name: 'Indian Veg Thali',
         description: 'Assorted vegetarian dishes, rice, roti, dal, and dessert',
         price: 530,
-        prepTime: '30-40 min'
+        prepTime: '30-40 min',
+        type : 'lunch',
       },
       {
         id: 'biriyani',
         name: 'Chicken Biryani',
         description: 'Fragrant basmati rice with spiced chicken, served with raita',
         price: 470,
-        prepTime: '30-40 min'
+        prepTime: '30-40 min',
+        type : 'lunch',
       },
     ],
     dinner: [
@@ -94,35 +104,40 @@ const CateringItems = ({ showConfirmation }) => {
         name: 'Grilled Steak',
         description: 'Prime beef steak with roasted potatoes and vegetables',
         price: 820,
-        prepTime: '40-50 min'
+        prepTime: '40-50 min',
+        type : 'dinner',
       },
       {
         id: 'salmon',
         name: 'Grilled Salmon',
         description: 'Fresh salmon with rice pilaf and steamed vegetables',
         price: 730,
-        prepTime: '30-40 min'
+        prepTime: '30-40 min',
+        type : 'dinner',
       },
       {
         id: 'chicken',
         name: 'Roasted Chicken',
         description: 'Herb-roasted chicken with mashed potatoes and gravy',
         price: 940,
-        prepTime: '40-50 min'
+        prepTime: '40-50 min',
+        type : 'dinner',
       },
       {
         id: 'paneer',
         name: 'Paneer Tikka Masala',
         description: 'Indian cottage cheese in creamy tomato curry with naan',
         price: 640,
-        prepTime: '45-60 min'
+        prepTime: '45-60 min',
+        type : 'dinner',
       },
       {
         id: 'lobster',
         name: 'Butter Garlic Lobster',
         description: 'Grilled lobster tail with lemon butter sauce',
         price: 600,
-        prepTime: '45-60 min'
+        prepTime: '45-60 min',
+        type : 'dinner',
       }      
     ],
     drinks: [
@@ -131,35 +146,40 @@ const CateringItems = ({ showConfirmation }) => {
         name: 'Wine Bottle',
         description: 'Selection of red or white wine',
         price: 1600,
-        prepTime: '15-20 min'
+        prepTime: '15-20 min',
+        type : 'drinks',
       },
       {
         id: 'cocktail',
         name: 'Cocktail',
         description: 'Handcrafted cocktail of your choice',
         price: 460,
-        prepTime: '10-15 min'
+        prepTime: '10-15 min',
+        type : 'drinks',
       },
       {
         id: 'smoothie',
         name: 'Fruit Smoothie',
         description: 'Blended fresh fruits with yogurt',
         price: 650,
-        prepTime: '20-25 min'
+        prepTime: '20-25 min',
+        type : 'drinks',
       },
       {
         id: 'espresso',
         name: 'Espresso Shot',
         description: 'Strong single or double espresso',
         price: 310,
-        prepTime: '15-20 min'
+        prepTime: '15-20 min',
+        type : 'drinks',
       },
       {
         id: 'icedtea',
         name: 'Iced Herbal Tea',
         description: 'Chilled hibiscus and mint infusion',
         price: 330,
-        prepTime: '10-15 min'
+        prepTime: '10-15 min',
+        type : 'drinks',
       }      
     ]
   };
@@ -218,6 +238,7 @@ const CateringItems = ({ showConfirmation }) => {
       return;
     }
   
+    // Prepare selected items
     const itemsToOrder = Object.entries(selectedItems)
       .filter(([_, quantity]) => quantity > 0)
       .map(([itemId, quantity]) => {
@@ -228,6 +249,7 @@ const CateringItems = ({ showConfirmation }) => {
           price: item.price,
           quantity,
           total: item.price * quantity,
+          type: item.type, // For category grouping
         };
       });
   
@@ -241,7 +263,7 @@ const CateringItems = ({ showConfirmation }) => {
       const gstAmount = subtotal * 0.18;
       const totalAmountWithGst = subtotal + gstAmount;
   
-      // Fetch user doc
+      // Fetch user document from 'voyagers' collection
       const q = query(collection(db, "voyagers"), where("uid", "==", user.uid));
       const querySnapshot = await getDocs(q);
   
@@ -254,27 +276,48 @@ const CateringItems = ({ showConfirmation }) => {
       const userData = querySnapshot.docs[0].data();
       const currentExpense = userData.expenses || 0;
   
-      // Update expense
+      // Update user's total expense
       await updateDoc(userDocRef, {
         expenses: currentExpense + totalAmountWithGst,
       });
   
-      // Add catering order
+      // Group items by category and prepare initial status
+      const itemsByCategory = {};
+      const statusByCategory = {};
+  
+      itemsToOrder.forEach(item => {
+        const type = item.type || "other";
+        if (!itemsByCategory[type]) {
+          itemsByCategory[type] = [];
+          statusByCategory[type] = "order received"; // Initial status
+        }
+  
+        itemsByCategory[type].push({
+          itemId: item.itemId,
+          name: item.name,
+          price: item.price,
+          quantity: item.quantity,
+          total: item.total,
+        });
+      });
+  
+      // Add the order to 'orders' collection
       await addDoc(collection(db, "orders"), {
         uid: user.uid,
         orderType: "Catering Order",
         orderCategory: "catering",
         orderDetails: {
-          items: itemsToOrder,
+          itemsByCategory,
           subtotal,
           gst: gstAmount,
           price: totalAmountWithGst,
         },
-        status: "Confirmed",
+        status: "Confirmed", // Overall order status
+        statusByCategory,     // Per-category status
         createdAt: serverTimestamp(),
       });
   
-      // Confirmation
+      // Show confirmation popup
       showConfirmation(
         "Order Confirmed",
         `Your catering order of ₹ ${totalAmountWithGst.toFixed(2)} has been placed successfully and will be delivered shortly to your cabin.`,
@@ -288,7 +331,6 @@ const CateringItems = ({ showConfirmation }) => {
       console.error("Error placing catering order:", error);
     }
   };
-  
   
   const getTabIcon = (tab) => {
     switch (tab) {

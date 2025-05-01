@@ -8,26 +8,45 @@ import "../index.css"
 
 // Firebase
 import { db } from '../../../firebase/firebaseConfig.js'; // Adjust the import path if needed
-import { collection, getDocs } from 'firebase/firestore';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 
 const Dashboard = ({ user }) => {
   const [totalVoyagers, setTotalVoyagers] = useState(0);
+  const [totalStationaryOrders, setStationaryOrders] = useState(0)
+  const [totalCateringOrders, setCateringOrders] = useState(0)
   const [loading, setLoading] = useState(true); // Loading state
   const [error, setError] = useState(null); // Error state
 
   useEffect(() => {
-    // Fetch the total number of voyagers from Firestore
-    const fetchVoyagersCount = async () => {
+    const fetchData = async () => {
       try {
-        const querySnapshot = await getDocs(collection(db, 'voyagers'));
-        setTotalVoyagers(querySnapshot.size); // Get the number of documents
+        // Get total voyagers
+        const voyagersSnapshot = await getDocs(collection(db, 'voyagers'));
+        setTotalVoyagers(voyagersSnapshot.size);
+  
+        const ordersRef = collection(db, "orders");
+  
+        // Get total stationary orders
+        const stationaryQuery = query(ordersRef, where("orderCategory", "==", "stationary"));
+        const stationarySnapshot = await getDocs(stationaryQuery);
+        setStationaryOrders(stationarySnapshot.size);
+        console.log("Stationary orders:", stationarySnapshot.size);
+  
+        // Get total catering orders
+        const cateringQuery = query(ordersRef, where("orderCategory", "==", "catering"));
+        const cateringSnapshot = await getDocs(cateringQuery);
+        setCateringOrders(cateringSnapshot.size);
+        console.log("Catering orders:", cateringSnapshot.size);
+  
       } catch (error) {
-        console.error("Error fetching voyagers count: ", error);
+        console.error("Error fetching data: ", error);
       }
     };
-
-    fetchVoyagersCount();  // Call the function when the component mounts
+  
+    fetchData();
   }, []);
+  
+  
 
 
   return (
@@ -42,7 +61,7 @@ const Dashboard = ({ user }) => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
         <StatCard
           title="Catering Items"
-          // count={stats.cateringItems}
+          count={totalCateringOrders}
           description="Total menu items available"
           icon={<Utensils className="w-6 h-6" />}
           linkText="View all items"
@@ -50,10 +69,10 @@ const Dashboard = ({ user }) => {
         />
         <StatCard
           title="Stationery Items"
-          // count={stats.stationeryItems}
+          count={totalStationaryOrders}
           description="Total stationery products"
           icon={<FileText className="w-6 h-6" />}
-          linkText="View all items"
+          linkText="View all stationery items"
           linkTo="/admin/stationery"
         />
         <StatCard

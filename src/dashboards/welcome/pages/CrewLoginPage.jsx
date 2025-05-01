@@ -145,8 +145,8 @@ const CrewLoginPage = () => {
       case "Admin":
         navigate("/admin");
         break;
-      case "Headcook":
-        navigate("/head_cook");
+      case "HeadCook":
+        navigate("/headCook");
         break;
       case "Manager":
         navigate("/manager");
@@ -189,13 +189,16 @@ const CrewLoginPage = () => {
 
           const userRole = userDoc.data().role;
           console.log("User Role:", userRole);
-    
+          
           navigateToDashboard(userRole);
+          console.log("Successfully Logged in !")
         } else {
-          console.log("No user document with this email found!");
+          console.log("No crew document with this email found!");
+          setErrorType("not-found");
+          setShowPopup(true)
         }
     
-        console.log("Successfully Logged-in");
+        // console.log("Successfully Logged-in");
         
       } catch (error) {
         console.error(error);
@@ -208,7 +211,6 @@ const CrewLoginPage = () => {
         }
         setShowPopup(true);
       }
-    
       setIsSubmitting(false);
   };
 

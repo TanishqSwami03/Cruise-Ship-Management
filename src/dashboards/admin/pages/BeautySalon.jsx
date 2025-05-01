@@ -1,192 +1,106 @@
-import { useState, useEffect } from "react"
-import { Link } from "react-router-dom"
-import { Scissors, Plus } from "lucide-react"
-import Header from "../components/Header"
-import DataTable from "../components/DataTable"
+import { Calendar, Scissors, Ticket, Users } from "lucide-react"
+import BookingTable from "../components/BookingTable"
+import StatCard from "../components/StatCard"
+import Header from "../components/Header.jsx"
 
-const BeautySalon = () => {
-  const [appointments, setAppointments] = useState([])
-  const [loading, setLoading] = useState(true)
+import { useEffect, useState } from "react"
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore"
+import { db } from "../../../firebase/firebaseConfig.js"
+
+function BeautySalon() {
+  const [bookings, setBookings] = useState([])
+  const [totalViewers, setTotalViewers] = useState(0)
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      const mockData = [
-        {
-          id: 1,
-          service: "Haircut",
-          voyager: "John Smith",
-          date: "2025-04-15",
-          time: "10:00 AM",
-          stylist: "Emma Wilson",
-          status: "Confirmed",
-        },
-        {
-          id: 2,
-          service: "Manicure",
-          voyager: "Emma Johnson",
-          date: "2025-04-15",
-          time: "11:30 AM",
-          stylist: "Sophia Lee",
-          status: "Confirmed",
-        },
-        {
-          id: 3,
-          service: "Facial",
-          voyager: "Michael Brown",
-          date: "2025-04-15",
-          time: "2:00 PM",
-          stylist: "James Taylor",
-          status: "Confirmed",
-        },
-        {
-          id: 4,
-          service: "Hair Coloring",
-          voyager: "Sophia Williams",
-          date: "2025-04-16",
-          time: "9:30 AM",
-          stylist: "Emma Wilson",
-          status: "Pending",
-        },
-        {
-          id: 5,
-          service: "Pedicure",
-          voyager: "James Davis",
-          date: "2025-04-16",
-          time: "11:00 AM",
-          stylist: "Sophia Lee",
-          status: "Confirmed",
-        },
-        {
-          id: 6,
-          service: "Massage",
-          voyager: "Olivia Miller",
-          date: "2025-04-16",
-          time: "3:30 PM",
-          stylist: "James Taylor",
-          status: "Cancelled",
-        },
-        {
-          id: 7,
-          service: "Haircut",
-          voyager: "Robert Wilson",
-          date: "2025-04-17",
-          time: "10:30 AM",
-          stylist: "Emma Wilson",
-          status: "Confirmed",
-        },
-        {
-          id: 8,
-          service: "Facial",
-          voyager: "Ava Moore",
-          date: "2025-04-17",
-          time: "1:00 PM",
-          stylist: "James Taylor",
-          status: "Pending",
-        },
-      ]
-      setAppointments(mockData)
-      setLoading(false)
-    }, 500)
-  }, [])
-
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this appointment?")) {
-      setAppointments(appointments.filter((appointment) => appointment.id !== id))
+    const fetchBookings = async () => {
+      try {
+        const ordersRef = collection(db, "orders")
+        const voyagersRef = collection(db, "voyagers")
+        const ordersQuery = query(ordersRef, where("orderCategory", "==", "beauty"))
+  
+        // Fetch bookings and voyagers in parallel
+        const [ordersSnapshot, voyagersSnapshot] = await Promise.all([
+          getDocs(ordersQuery),
+          getDocs(voyagersRef),
+        ])  
+  
+        // Create a uid → name map from voyagers
+        const uidToNameMap = {}
+        voyagersSnapshot.forEach((doc) => {
+          const data = doc.data()
+          uidToNameMap[data.uid] = data.name || "Unknown"
+        })
+  
+        let viewers = 0
+        const fetchedBookings = []
+  
+        ordersSnapshot.forEach((doc) => {
+          const data = doc.data()
+          const uid = data.uid
+          viewers += data.orderDetails?.ticketCount || 0
+  
+          fetchedBookings.push({
+            id: doc.id,
+            userName: uidToNameMap[uid] || "Unknown",
+            serviceName: data.orderDetails?.serviceName || "N/A",
+            time: data.orderDetails?.time || "N/A",
+            price: data.orderDetails?.price || "N/A",
+            orderForDate: data.orderDetails?.date || "",
+            // bookingDate: data.createdAt?.toDate?.() || "",
+            status: data.status || "Pending",
+          })
+        })
+  
+        setBookings(fetchedBookings)
+        setTotalViewers(viewers)
+        // console.log(bookings.length)
+        // console.log(totalViewers)
+      } catch (error) {
+        console.error("Error fetching movie bookings:", error)
+      }
     }
-  }
+  
+    fetchBookings()
+  }, [])
+  
 
   const columns = [
-    { key: "service", header: "Service" },
-    { key: "voyager", header: "Voyager" },
-    { key: "date", header: "Date" },
-    { key: "time", header: "Time" },
-    { key: "stylist", header: "Stylist" },
-    {
-      key: "status",
-      header: "Status",
-      render: (appointment) => {
-        const statusClass =
-          appointment.status === "Confirmed"
-            ? "badge-success"
-            : appointment.status === "Pending"
-              ? "badge-warning"
-              : "badge-danger"
-
-        return <span className={`badge ${statusClass}`}>{appointment.status}</span>
-      },
-    },
+    { header: "User Name", accessor: "userName" },
+    { header: "Service Name", accessor: "serviceName" },
+    { header: "Time", accessor: "time" },
+    { header: "Order for Date", accessor: "orderForDate" },
+    { header: "Price", accessor: "price" },
+    // { header: "Booking Date", accessor: "bookingDate" },
+    { header: "Status", accessor: "status" },
   ]
-
-  const filters = [
-    {
-      name: "service",
-      label: "Service",
-      options: [
-        { value: "Haircut", label: "Haircut" },
-        { value: "Manicure", label: "Manicure" },
-        { value: "Pedicure", label: "Pedicure" },
-        { value: "Facial", label: "Facial" },
-        { value: "Hair Coloring", label: "Hair Coloring" },
-        { value: "Massage", label: "Massage" },
-      ],
-    },
-    {
-      name: "stylist",
-      label: "Stylist",
-      options: [
-        { value: "Emma Wilson", label: "Emma Wilson" },
-        { value: "Sophia Lee", label: "Sophia Lee" },
-        { value: "James Taylor", label: "James Taylor" },
-      ],
-    },
-    {
-      name: "status",
-      label: "Status",
-      options: [
-        { value: "Confirmed", label: "Confirmed" },
-        { value: "Pending", label: "Pending" },
-        { value: "Cancelled", label: "Cancelled" },
-      ],
-    },
-  ]
-
-  const user = {
-    name: "Admin User",
-    role: "System Administrator",
-    avatar: "A",
-  }
 
   return (
     <div>
-      <Header title="Beauty Salon" subtitle="Manage salon services and appointment slots" user={user} />
-
-      <div className="mb-6 flex justify-between items-center">
+    <Header title="Beauty Salon" subtitle="Manage Salon Bookings"/>
+    <div className="space-y-6">
         <div className="flex items-center">
           <Scissors className="w-6 h-6 text-pink-500 mr-2" />
-          <h2 className="text-xl font-bold text-gray-800">Salon Appointments</h2>
+          <h2 className="text-xl font-bold text-gray-800">All Beauty Salon Bookings</h2>
         </div>
-        <Link to="/admin/beauty-salon/add" className="btn-primary flex items-center">
-          <Plus className="w-4 h-4 mr-1" />
-          Add New Appointment
-        </Link>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatCard title="Total Bookings" value={bookings.length} icon={<Calendar size={24} />} color="blue" />
+        {/* <StatCard title="Total Tickets Booked" value={totalViewers} icon={<Users size={24} />} color="green" /> */}
       </div>
 
-      {loading ? (
-        <div className="text-center py-10">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500"></div>
-          <p className="mt-2 text-gray-500">Loading appointments...</p>
-        </div>
-      ) : (
-        <DataTable
-          data={appointments}
+      <div className="bg-white rounded-lg shadow">
+        <BookingTable
+          bookings={bookings}
           columns={columns}
-          onDelete={handleDelete}
-          editPath="/admin/beauty-salon/edit"
-          searchPlaceholder="Search appointments..."
-          filters={filters}
+          // title="All Movie Bookings"
         />
-      )}
+      </div>
+    </div>
     </div>
   )
 }

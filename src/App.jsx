@@ -1,4 +1,4 @@
-import { Routes, Route, Router } from "react-router-dom"
+import { Routes, Route } from "react-router-dom"
 
 import AdminApp from './dashboards/admin/App.jsx'
 import HeadCookApp from './dashboards/head_cook/App.jsx'

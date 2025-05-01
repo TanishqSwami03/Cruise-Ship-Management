@@ -1,84 +1,91 @@
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { collection, query, where, getDocs, doc, updateDoc } from "firebase/firestore"
 import { Search, Filter } from "lucide-react"
+import { db } from "../../../firebase/firebaseConfig.js"
 import StatusBadge from "../components/StatusBadge"
 
-// Sample data for stationery orders
-const initialOrders = [
-  {
-    id: "#1001",
-    voyagerName: "Emma Johnson",
-    initials: "EJ",
-    orderDate: "6/15/2023",
-    orderTime: "8:30:00 AM",
-    cabinNumber: "A204",
-    items: ["2x Notebooks", "5x Ballpoint Pens", "3x Highlighters"],
-    type: "Standard",
-    status: "Pending",
-  },
-  {
-    id: "#1002",
-    voyagerName: "Michael Smith",
-    initials: "MS",
-    orderDate: "6/15/2023",
-    orderTime: "9:15:00 AM",
-    cabinNumber: "B118",
-    items: ["1x Leather Journal", "1x Fountain Pen", "2x Ink Cartridges"],
-    type: "Premium",
-    status: "Preparing",
-  },
-  {
-    id: "#1003",
-    voyagerName: "Sophia Garcia",
-    initials: "SG",
-    orderDate: "6/15/2023",
-    orderTime: "10:45:00 AM",
-    cabinNumber: "A315",
-    items: ["1x Sketchbook", "1x Drawing Pencil Set", "1x Eraser"],
-    type: "Standard",
-    status: "Prepared",
-  },
-  {
-    id: "#1004",
-    voyagerName: "James Wilson",
-    initials: "JW",
-    orderDate: "6/15/2023",
-    orderTime: "11:20:00 AM",
-    cabinNumber: "C102",
-    items: ["2x Sticky Note Pads", "2x Highlighters", "1x Stapler"],
-    type: "Standard",
-    status: "Pending",
-  },
-  {
-    id: "#1005",
-    voyagerName: "Olivia Brown",
-    initials: "OB",
-    orderDate: "6/15/2023",
-    orderTime: "12:00:00 PM",
-    cabinNumber: "B220",
-    items: ["1x Planner", "1x Colored Pens Set"],
-    type: "Premium",
-    status: "Cancelled",
-  },
-  {
-    id: "#1006",
-    voyagerName: "William Davis",
-    initials: "WD",
-    orderDate: "6/15/2023",
-    orderTime: "1:30:00 PM",
-    cabinNumber: "A405",
-    items: ["2x Legal Pads", "1x Business Card Holder", "5x Gel Pens"],
-    type: "Standard",
-    status: "Pending",
-  },
-]
-
 function StationeryOrders() {
-  const [orders, setOrders] = useState(initialOrders)
+  const [orders, setOrders] = useState([])
   const [searchTerm, setSearchTerm] = useState("")
   const [statusFilter, setStatusFilter] = useState("All Statuses")
-  const [typeFilter, setTypeFilter] = useState("All Types")
 
-  // Filter orders based on search term, status filter, and type filter
+  useEffect(() => {
+    const fetchOrders = async () => {
+      try {
+        const ordersRef = collection(db, "orders")
+        const voyagersRef = collection(db, "voyagers")
+        const q = query(ordersRef, where("orderCategory", "==", "stationary"))
+
+        const [ordersSnap, voyagersSnap] = await Promise.all([
+          getDocs(q),
+          getDocs(voyagersRef),
+        ])
+
+        const uidMap = {}
+        voyagersSnap.forEach((doc) => {
+          const data = doc.data()
+          uidMap[data.uid] = {
+            name: data.name || "Unknown",
+            cabinNumber: data.cabin || "N/A",
+          }
+        })
+
+        const ordersList = []
+        ordersSnap.forEach((doc) => {
+          const data = doc.data()
+          const voyager = uidMap[data.uid]
+          console.log("Data",data)
+          console.log("Voyager", voyager)
+
+          const items = data.orderDetails?.items || []
+          const itemDescriptions = items.map(
+            (item) => `${item.quantity}x ${item.name}`
+          )
+
+          const createdAt = data.createdAt?.toDate?.()
+          const orderDate = createdAt?.toLocaleDateString()
+          const orderTime = createdAt?.toLocaleTimeString()
+
+          ordersList.push({
+            id: doc.id,
+            voyagerName: voyager.name,
+            initials: voyager.name
+              .split(" ")
+              .map((n) => n[0])
+              .join("")
+              .toUpperCase(),
+            orderDate: orderDate || "N/A",
+            orderTime: orderTime || "N/A",
+            cabinNumber: voyager.cabinNumber || "N/A",
+            items: itemDescriptions,
+            status: data.status || "Pending",
+          })
+        })
+
+        setOrders(ordersList)
+      } catch (error) {
+        console.error("Error fetching stationery orders:", error)
+      }
+    }
+
+    fetchOrders()
+  }, [])
+
+  const updateStatus = async (orderId, newStatus) => {
+    try {
+      const docRef = doc(db, "orders", orderId)
+      await updateDoc(docRef, { status: newStatus })
+
+      setOrders((prevOrders) =>
+        prevOrders.map((order) =>
+          order.id === orderId ? { ...order, status: newStatus } : order
+        )
+      )
+    } catch (err) {
+      console.error("Failed to update status:", err)
+    }
+  }
+
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
       order.voyagerName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -86,56 +93,44 @@ function StationeryOrders() {
       order.cabinNumber.toLowerCase().includes(searchTerm.toLowerCase())
 
     const matchesStatus = statusFilter === "All Statuses" || order.status === statusFilter
-    const matchesType = typeFilter === "All Types" || order.type === typeFilter
-
-    return matchesSearch && matchesStatus && matchesType
+    return matchesSearch && matchesStatus
   })
-
-  const handleStartPreparing = (orderId) => {
-    setOrders(orders.map((order) => (order.id === orderId ? { ...order, status: "Preparing" } : order)))
-  }
-
-  const handleMarkPrepared = (orderId) => {
-    setOrders(orders.map((order) => (order.id === orderId ? { ...order, status: "Prepared" } : order)))
-  }
-
-  const handleCancel = (orderId) => {
-    setOrders(orders.map((order) => (order.id === orderId ? { ...order, status: "Cancelled" } : order)))
-  }
 
   const renderActionButtons = (order) => {
     switch (order.status.toLowerCase()) {
-      case "pending":
+
+      case "confirmed":
         return (
-          <div className="flex space-x-4">
+          <div className="flex gap-2">
             <button
-              className="text-blue-600 hover:underline text-sm font-medium"
-              onClick={() => handleStartPreparing(order.id)}
+              className="text-purple-600 hover:underline text-sm font-medium bg-white-100"
+              onClick={() => updateStatus(order.id, "Preparing")}
             >
               Start Preparing
             </button>
-            <button className="text-red-600 hover:underline text-sm font-medium" onClick={() => handleCancel(order.id)}>
+            <button
+              className="text-red-600 hover:underline text-sm font-medium"
+              onClick={() => updateStatus(order.id, "Cancelled")}
+            >
               Cancel
             </button>
           </div>
         )
       case "preparing":
         return (
-          <div className="flex space-x-4">
+          <div className="flex gap-2">
             <button
               className="text-green-600 hover:underline text-sm font-medium"
-              onClick={() => handleMarkPrepared(order.id)}
+              onClick={() => updateStatus(order.id, "Prepared")}
             >
               Mark Prepared
             </button>
-            <button className="text-red-600 hover:underline text-sm font-medium" onClick={() => handleCancel(order.id)}>
+            <button
+              className="text-red-600 hover:underline text-sm font-medium"
+              onClick={() => updateStatus(order.id, "Cancelled")}
+            >
               Cancel
             </button>
-          </div>
-        )
-      case "prepared":
-        return (
-          <div className="flex space-x-4">
           </div>
         )
       default:
@@ -179,35 +174,6 @@ function StationeryOrders() {
               <option value="Cancelled">Cancelled</option>
             </select>
           </div>
-
-          {/* <div className="flex items-center">
-            <svg
-              className="h-5 w-5 text-gray-400 mr-2"
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path d="M16 2V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M8 2V6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              <path d="M3 10H21" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-            <select
-              className="border border-gray-300 rounded-md px-3 py-2 focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent"
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-            >
-              <option value="All Types">All Types</option>
-              <option value="Standard">Standard</option>
-              <option value="Premium">Premium</option>
-            </select>
-          </div> */}
         </div>
       </div>
 
@@ -215,56 +181,16 @@ function StationeryOrders() {
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Order ID
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Voyager
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Order Date
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Items
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Type
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Status
-              </th>
-              <th
-                scope="col"
-                className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"
-              >
-                Actions
-              </th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Voyager</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Order Date</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Items</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Status</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Actions</th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
             {filteredOrders.map((order) => (
               <tr key={order.id}>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="text-sm font-medium text-gray-900">{order.id}</div>
-                </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <div className="flex items-center">
                     <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center text-gray-600 font-medium mr-3">
@@ -272,7 +198,7 @@ function StationeryOrders() {
                     </div>
                     <div>
                       <div className="text-sm font-medium text-gray-900">{order.voyagerName}</div>
-                      <div className="text-sm text-gray-500">Cabin {order.cabinNumber}</div>
+                      <div className="text-sm text-gray-500">Cabin: {order.cabinNumber}</div>
                     </div>
                   </div>
                 </td>
@@ -280,52 +206,10 @@ function StationeryOrders() {
                   <div className="text-sm text-gray-900">{order.orderDate}</div>
                   <div className="text-sm text-gray-500">{order.orderTime}</div>
                 </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm text-gray-900">
-                    {order.items.map((item, index) => (
-                      <div key={index}>{item}</div>
-                    ))}
-                  </div>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">
-                  <div className="flex items-center">
-                    <svg
-                      className="h-5 w-5 text-pink-500 mr-1"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M19 4H5C3.89543 4 3 4.89543 3 6V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V6C21 4.89543 20.1046 4 19 4Z"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M16 2V6"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M8 2V6"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M3 10H21"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                    <span className="text-sm text-gray-900">{order.type}</span>
-                  </div>
+                <td className="px-6 py-4 text-sm text-gray-900">
+                  {order.items.map((item, i) => (
+                    <div key={i}>{item}</div>
+                  ))}
                 </td>
                 <td className="px-6 py-4 whitespace-nowrap">
                   <StatusBadge status={order.status} />

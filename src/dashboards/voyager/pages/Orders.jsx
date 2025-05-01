@@ -38,6 +38,7 @@ const Orders = () => {
   }, [user]);
 
   const handleCancelOrder = (order) => {
+    console.log("User selected to cancel ", order)
     setSelectedOrder(order);
     setShowConfirmation(true);
   };
@@ -48,6 +49,8 @@ const Orders = () => {
     try {
       // Delete the order
       await deleteDoc(doc(db, "orders", selectedOrder.id));
+
+      console.log("Confirmed cancel for:", selectedOrder.id);
 
       // Deduct from user's expenses
       const voyagerQuery = query(collection(db, "voyagers"), where("uid", "==", user.uid));
@@ -191,9 +194,12 @@ const Orders = () => {
         );
   
       case "catering":
+        const itemsByCategory = order.orderDetails.itemsByCategory || {};
+        const allItems = Object.values(itemsByCategory).flat();
+      
         return (
           <div className="order-items">
-            {order.orderDetails.items.map((item, index) => (
+            {allItems.map((item, index) => (
               <div key={index} className="order-item">
                 <div className="item-name-qty">
                   <span className="item-name">{item.name}</span>
@@ -203,12 +209,12 @@ const Orders = () => {
               </div>
             ))}
             <div className="order-summary">
-              <hr className="cart-divider" style={{margin: '10px 0', border: 'none', borderTop: '1px solid #ccc'}}/>
+              <hr className="cart-divider" style={{margin: '10px 0', border: 'none', borderTop: '1px solid #ccc'}} />
               {formatLine("Subtotal", `₹ ${order.orderDetails.subtotal.toFixed(2)}`)}
               {formatLine("GST (18%)", `₹ ${order.orderDetails.gst.toFixed(2)}`)}
             </div>
           </div>
-        );
+        );        
   
       default:
         return (
@@ -286,10 +292,8 @@ const Orders = () => {
               </button>
             </div>
             <div className="modal-body">
-              <div className="confirmation-message">
-                <AlertCircle size={24} className="text-red-500" />
-                <p>Are you sure you want to cancel this order? This action cannot be undone.</p>
-              </div>
+              <AlertCircle size={24} className="text-red-500" />
+              <p>Are you sure you want to cancel this order? This action cannot be undone.</p>
             </div>
             <div className="modal-footer">
               <button className="btn-secondary" onClick={() => setShowConfirmation(false)}>
@@ -473,6 +477,97 @@ const Orders = () => {
             align-self: flex-end;
           }
         }
+
+        .modal-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.5); /* Slightly dark background to dim content behind */
+          display: flex;
+          justify-content: center; /* Center horizontally */
+          align-items: center; /* Center vertically */
+          z-index: 50; /* Ensure it's above other content */
+        }
+
+        .modal {
+          background-color: white;
+          border-radius: 8px;
+          padding: 24px;
+          max-width: 500px; /* Maximum width for the modal */
+          width: 90%; /* Ensure it is responsive */
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); /* Add some shadow for depth */
+          z-index: 51; /* Ensure modal content is above overlay */
+          display: flex;
+          flex-direction: column;
+          gap: 16px; /* Space between sections in the modal */
+        }
+
+        .modal-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+
+        .modal-title {
+          font-size: 18px;
+          font-weight: bold;
+        }
+
+        .modal-close {
+          background: transparent;
+          border: none;
+          font-size: 20px;
+          cursor: pointer;
+        }
+
+        .modal-body {
+          display: flex;
+          align-items: center;
+          gap: 10px;
+        }
+
+        .confirmation-message p {
+          margin: 0;
+          font-size: 16px;
+          color: #333;
+          display: inline-block;
+        }
+
+        .modal-footer {
+          display: flex;
+          justify-content: space-between;
+          gap: 16px;
+        }
+
+        .modal-footer button {
+          padding: 8px 16px;
+          border-radius: 6px;
+          font-weight: bold;
+          transition: all 0.2s;
+        }
+
+        .btn-secondary {
+          background-color: #f0f0f0;
+          color: #333;
+          border: 1px solid #ccc;
+        }
+
+        .btn-secondary:hover {
+          background-color: #e0e0e0;
+        }
+
+        .btn-danger {
+          background-color: #f43f5e;
+          color: white;
+          border: none;
+        }
+
+        .btn-danger:hover {
+          background-color: #e11d48;
+        }
+
       `}</style>
 
     </div>

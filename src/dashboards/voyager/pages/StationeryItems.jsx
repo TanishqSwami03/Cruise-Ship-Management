@@ -142,6 +142,7 @@ const StationeryItems = ({ showConfirmation }) => {
       // Create new order document
       await addDoc(collection(db, "orders"), {
         uid: user.uid,
+        cabin: user.cabin ,
         orderType: "Stationery Order",
         orderCategory: "stationary",
         orderDetails: {

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useUser } from "../contexts/UserContext";  // Importing the useUser hook
+import { User } from 'lucide-react'
 
 const Header = () => {
   const { user } = useUser();  // Accessing user from the context
@@ -12,6 +13,7 @@ const Header = () => {
           <div className="text-sm text-gray-500">{user?.role || ""}</div>
         </div>
         <div className="h-10 w-10 rounded-full bg-pink-100 flex items-center justify-center text-pink-500 font-bold">
+          <User size={20} />
         </div>
       </div>
     </header>

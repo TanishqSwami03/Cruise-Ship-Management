@@ -97,6 +97,7 @@ const AddEditVoyager = () => {
               ...newVoyagerData,
               email,
               password,
+              role : "Voyager",
               uid: user.uid,  // Add Firebase user UID to the Firestore document
             };
 

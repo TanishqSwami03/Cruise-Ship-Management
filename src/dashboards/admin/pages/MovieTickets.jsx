@@ -1,181 +1,104 @@
-import { useState, useEffect } from "react"
-import { Link } from "react-router-dom"
-import { Film, Plus } from "lucide-react"
-import Header from "../components/Header"
-import DataTable from "../components/DataTable"
+import { Calendar, Ticket, Users } from "lucide-react"
+import BookingTable from "../components/BookingTable"
+import StatCard from "../components/StatCard"
+import Header from "../components/Header.jsx"
 
-const MovieTickets = () => {
-  const [movies, setMovies] = useState([])
-  const [loading, setLoading] = useState(true)
+import { useEffect, useState } from "react"
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+} from "firebase/firestore"
+import { db } from "../../../firebase/firebaseConfig.js"
+
+function MovieTickets() {
+  const [bookings, setBookings] = useState([])
+  const [totalViewers, setTotalViewers] = useState(0)
 
   useEffect(() => {
-    // Simulate API call
-    setTimeout(() => {
-      const mockData = [
-        {
-          id: 1,
-          title: "Ocean Adventure",
-          showtime: "2025-04-15 19:00",
-          location: "Main Theater",
-          capacity: 200,
-          booked: 145,
-          status: "Active",
-        },
-        {
-          id: 2,
-          title: "The Lost Island",
-          showtime: "2025-04-15 21:30",
-          location: "Main Theater",
-          capacity: 200,
-          booked: 98,
-          status: "Active",
-        },
-        {
-          id: 3,
-          title: "Underwater Wonders",
-          showtime: "2025-04-16 15:00",
-          location: "Deck Cinema",
-          capacity: 100,
-          booked: 67,
-          status: "Active",
-        },
-        {
-          id: 4,
-          title: "Sailing Through Time",
-          showtime: "2025-04-16 19:00",
-          location: "Main Theater",
-          capacity: 200,
-          booked: 178,
-          status: "Active",
-        },
-        {
-          id: 5,
-          title: "Pirates of the Caribbean",
-          showtime: "2025-04-17 15:00",
-          location: "Deck Cinema",
-          capacity: 100,
-          booked: 100,
-          status: "Sold Out",
-        },
-        {
-          id: 6,
-          title: "Titanic",
-          showtime: "2025-04-17 19:00",
-          location: "Main Theater",
-          capacity: 200,
-          booked: 156,
-          status: "Active",
-        },
-        {
-          id: 7,
-          title: "Finding Nemo",
-          showtime: "2025-04-18 15:00",
-          location: "Deck Cinema",
-          capacity: 100,
-          booked: 45,
-          status: "Active",
-        },
-        {
-          id: 8,
-          title: "The Life Aquatic",
-          showtime: "2025-04-18 19:00",
-          location: "Main Theater",
-          capacity: 200,
-          booked: 87,
-          status: "Active",
-        },
-      ]
-      setMovies(mockData)
-      setLoading(false)
-    }, 500)
-  }, [])
-
-  const handleDelete = (id) => {
-    if (window.confirm("Are you sure you want to delete this movie screening?")) {
-      setMovies(movies.filter((movie) => movie.id !== id))
+    const fetchBookings = async () => {
+      try {
+        const ordersRef = collection(db, "orders")
+        const voyagersRef = collection(db, "voyagers")
+        const ordersQuery = query(ordersRef, where("orderCategory", "==", "movie"))
+  
+        // Fetch bookings and voyagers in parallel
+        const [ordersSnapshot, voyagersSnapshot] = await Promise.all([
+          getDocs(ordersQuery),
+          getDocs(voyagersRef),
+        ])  
+  
+        // Create a uid → name map from voyagers
+        const uidToNameMap = {}
+        voyagersSnapshot.forEach((doc) => {
+          const data = doc.data()
+          uidToNameMap[data.uid] = data.name || "Unknown"
+        })
+  
+        let viewers = 0
+        const fetchedBookings = []
+  
+        ordersSnapshot.forEach((doc) => {
+          const data = doc.data()
+          const uid = data.uid
+          viewers += data.orderDetails?.ticketCount || 0
+  
+          fetchedBookings.push({
+            id: doc.id,
+            userName: uidToNameMap[uid] || "Unknown",
+            movieTitle: data.orderDetails?.movieName || "N/A",
+            showtime: `${data.orderDetails?.time || "N/A"} | ${data.orderDetails?.screen || "?"}`,
+            tickets: data.orderDetails?.ticketCount || 0,
+            bookingDate: data.orderDetails?.date || "",
+            status: data.status || "Pending",
+          })
+        })
+  
+        setBookings(fetchedBookings)
+        setTotalViewers(viewers)
+        // console.log(bookings.length)
+        // console.log(totalViewers)
+      } catch (error) {
+        console.error("Error fetching movie bookings:", error)
+      }
     }
-  }
+  
+    fetchBookings()
+  }, [])
+  
 
   const columns = [
-    { key: "title", header: "Movie Title" },
-    { key: "showtime", header: "Showtime" },
-    { key: "location", header: "Location" },
-    {
-      key: "capacity",
-      header: "Capacity",
-      render: (movie) => `${movie.booked}/${movie.capacity}`,
-    },
-    {
-      key: "status",
-      header: "Status",
-      render: (movie) => {
-        const statusClass =
-          movie.status === "Sold Out"
-            ? "badge-danger"
-            : movie.booked >= movie.capacity * 0.8
-              ? "badge-warning"
-              : "badge-success"
-
-        return <span className={`badge ${statusClass}`}>{movie.status}</span>
-      },
-    },
+    { header: "User Name", accessor: "userName" },
+    { header: "Movie Title", accessor: "movieTitle" },
+    { header: "Showtime | Screen", accessor: "showtime" },
+    { header: "Ticketes Booked", accessor: "tickets" },
+    { header: "Booking Date", accessor: "bookingDate" },
+    { header: "Status", accessor: "status" },
   ]
-
-  const filters = [
-    {
-      name: "location",
-      label: "Location",
-      options: [
-        { value: "Main Theater", label: "Main Theater" },
-        { value: "Deck Cinema", label: "Deck Cinema" },
-      ],
-    },
-    {
-      name: "status",
-      label: "Status",
-      options: [
-        { value: "Active", label: "Active" },
-        { value: "Sold Out", label: "Sold Out" },
-      ],
-    },
-  ]
-
-  const user = {
-    name: "Admin User",
-    role: "System Administrator",
-    avatar: "A",
-  }
 
   return (
     <div>
-      <Header title="Movie Tickets" subtitle="Manage movie screenings and ticket availability" user={user} />
-
-      <div className="mb-6 flex justify-between items-center">
+    <Header title="Movie Tickets" subtitle="Manage Movie Ticket Bookings"/>
+    <div className="space-y-6">
         <div className="flex items-center">
-          <Film className="w-6 h-6 text-pink-500 mr-2" />
-          <h2 className="text-xl font-bold text-gray-800">Movie Screenings</h2>
+          <Ticket className="w-6 h-6 text-pink-500 mr-2" />
+          <h2 className="text-xl font-bold text-gray-800">All Ticket Bookings</h2>
         </div>
-        <Link to="/admin/movie-tickets/add" className="btn-primary flex items-center">
-          <Plus className="w-4 h-4 mr-1" />
-          Add New Screening
-        </Link>
+
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <StatCard title="Total Bookings" value={bookings.length} icon={<Calendar size={24} />} color="blue" />
+        <StatCard title="Total Tickets Booked" value={totalViewers} icon={<Users size={24} />} color="green" />
       </div>
 
-      {loading ? (
-        <div className="text-center py-10">
-          <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-pink-500"></div>
-          <p className="mt-2 text-gray-500">Loading movie screenings...</p>
-        </div>
-      ) : (
-        <DataTable
-          data={movies}
+      <div className="bg-white rounded-lg shadow">
+        <BookingTable
+          bookings={bookings}
           columns={columns}
-          onDelete={handleDelete}
-          editPath="/admin/movie-tickets/edit"
-          searchPlaceholder="Search movies..."
-          filters={filters}
+          // title="All Movie Bookings"
         />
-      )}
+      </div>
+    </div>
     </div>
   )
 }

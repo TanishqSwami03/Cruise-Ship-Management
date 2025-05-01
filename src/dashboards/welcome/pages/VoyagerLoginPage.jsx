@@ -330,15 +330,15 @@ const styles = {
     backgroundColor: "rgba(255, 255, 255, 0.6)",
     borderRadius: "50%",
   },
-  wave2: {
-    position: "absolute",
-    bottom: "0",
-    left: "0",
-    width: "40px",
-    height: "2px",
-    backgroundColor: "rgba(255, 255, 255, 0.4)",
-    borderRadius: "50%",
-  },
+  // wave2: {
+  //   position: "absolute",
+  //   bottom: "0",
+  //   left: "0",
+  //   width: "40px",
+  //   height: "2px",
+  //   backgroundColor: "rgba(255, 255, 255, 0.4)",
+  //   borderRadius: "50%",
+  // },
   oceanBackground: {
     position: "absolute",
     width: "100%",
@@ -358,11 +358,11 @@ const styles = {
     borderRadius: "100%",
     animation: "wave 15s infinite linear",
   },
-  wave2: {
-    background: "var(--wave-color-2)",
-    bottom: "-50px",
-    animation: "wave 17s infinite linear",
-  },
+  // wave2: {
+  //   background: "var(--wave-color-2)",
+  //   bottom: "-50px",
+  //   animation: "wave 17s infinite linear",
+  // },
   loginContent: {
     width: "100%",
     maxWidth: "500px",

@@ -110,18 +110,18 @@ function BookingTable({ bookings, columns, title }) {
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusClass(booking.status)}`}>
                           {booking.status}
                         </span>
+                      ) : Array.isArray(booking[column.accessor]) ? (
+                        <div className="flex flex-col space-y-1">
+                          {booking[column.accessor].map((item, i) => (
+                            <span key={i}>{item}</span>
+                          ))}
+                        </div>
                       ) : (
                         booking[column.accessor]
                       )}
                     </td>
                   ))}
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                    {/* <button
-                      className="text-pink-600 hover:text-pink-900 mr-3"
-                      onClick={() => handleViewBooking(booking)}
-                    >
-                      View
-                    </button> */}
                     <button
                       className="text-pink-600 hover:text-pink-900"
                       onClick={() => handleEditBooking(booking)}
@@ -189,69 +189,67 @@ function BookingTable({ bookings, columns, title }) {
         </div>
       )}
 
-      {/* Edit Booking Modal */}
       {editingBooking && (
-      <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50">
-        <div className="bg-white/70 backdrop-blur-lg border border-white/30 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-lg">
-          <div className="flex justify-between items-center mb-4">
-            <h3 className="text-xl font-semibold text-gray-800">Edit Booking</h3>
-            <button onClick={handleCloseModal} className="text-gray-500 hover:text-gray-700">
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-          <div className="space-y-4">
-            <div className="grid grid-cols-3 gap-4 items-center">
-              <label className="text-sm font-medium text-gray-500">Booking ID:</label>
-              <div className="col-span-2 text-sm text-gray-900">#{editingBooking.id}</div>
+        <div className="fixed inset-0 backdrop-blur-sm bg-black/30 flex items-center justify-center z-50">
+          <div className="bg-white/70 backdrop-blur-lg border border-white/30 rounded-lg p-6 max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-lg">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-semibold text-gray-800">Edit Booking</h3>
+              <button onClick={handleCloseModal} className="text-gray-500 hover:text-gray-700">
+                <X className="h-5 w-5" />
+              </button>
             </div>
-            {columns.map((column, index) => (
-              <div key={index} className="grid grid-cols-3 gap-4 items-center">
-                <label htmlFor={column.accessor} className="text-sm font-medium text-gray-500">
-                  {column.header}:
-                </label>
-                {column.accessor === "status" ? (
-                  <select
-                    id={column.accessor}
-                    name={column.accessor}
-                    value={editFormData[column.accessor] || ""}
-                    onChange={handleInputChange}
-                    className="col-span-2 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
-                  >
-                    <option value="Confirmed">Confirmed</option>
-                    <option value="Pending">Pending</option>
-                    <option value="Cancelled">Cancelled</option>
-                  </select>
-                ) : (
-                  <input
-                    id={column.accessor}
-                    name={column.accessor}
-                    type="text"
-                    className="col-span-2 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
-                    value={editFormData[column.accessor] || ""}
-                    onChange={handleInputChange}
-                  />
-                )}
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-4 items-center">
+                <label className="text-sm font-medium text-gray-500">Booking ID:</label>
+                <div className="col-span-2 text-sm text-gray-900">#{editingBooking.id}</div>
               </div>
-            ))}
-          </div>
-          <div className="mt-6 flex justify-end space-x-3">
-            <button
-              onClick={handleCloseModal}
-              className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={handleSaveEdit}
-              className="px-4 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700 transition-colors"
-            >
-              Save Changes
-            </button>
+              {columns.map((column, index) => (
+                <div key={index} className="grid grid-cols-3 gap-4 items-center">
+                  <label htmlFor={column.accessor} className="text-sm font-medium text-gray-500">
+                    {column.header}:
+                  </label>
+                  {column.accessor === "status" ? (
+                    <select
+                      id={column.accessor}
+                      name={column.accessor}
+                      value={editFormData[column.accessor] || ""}
+                      onChange={handleInputChange}
+                      className="col-span-2 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+                    >
+                      <option value="Confirmed">Confirmed</option>
+                      <option value="Pending">Pending</option>
+                      <option value="Cancelled">Cancelled</option>
+                    </select>
+                  ) : (
+                    <input
+                      id={column.accessor}
+                      name={column.accessor}
+                      type="text"
+                      className="col-span-2 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-pink-500"
+                      value={editFormData[column.accessor] || ""}
+                      onChange={handleInputChange}
+                    />
+                  )}
+                </div>
+              ))}
+            </div>
+            <div className="mt-6 flex justify-end space-x-3">
+              <button
+                onClick={handleCloseModal}
+                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveEdit}
+                className="px-4 py-2 bg-pink-600 text-white rounded-md hover:bg-pink-700 transition-colors"
+              >
+                Save Changes
+              </button>
+            </div>
           </div>
         </div>
-      </div>
       )}
-
     </div>
   )
 }
