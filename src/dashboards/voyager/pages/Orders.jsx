@@ -28,6 +28,7 @@ const Orders = () => {
             createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),  // 👈 FIX: convert Firestore timestamp to JS Date
           };
         });
+        ordersData.sort((a, b) => b.createdAt - a.createdAt);
         setOrders(ordersData);
       } catch (error) {
         console.error("Error fetching orders:", error);
