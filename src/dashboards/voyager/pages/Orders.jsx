@@ -1,13 +1,13 @@
 import { useState, useEffect } from "react"
 import { Clock, ShoppingCart, X, AlertCircle } from "lucide-react"
 
-import { db } from "../../../firebase/firebaseConfig.js"; // adjust if needed
+import { db } from "../../../firebase/firebaseConfig.js";
 import { collection, query, where, getDocs, deleteDoc, doc, updateDoc } from "firebase/firestore";
 
 import { useUser } from "../context/UserContext"
 
 const Orders = () => {
-  const { user } = useUser(); // get user from context
+  const { user } = useUser();
   
   const [orders, setOrders] = useState([]);
   const [showConfirmation, setShowConfirmation] = useState(false);
@@ -25,7 +25,7 @@ const Orders = () => {
           return {
             id: doc.id,
             ...data,
-            createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),  // 👈 FIX: convert Firestore timestamp to JS Date
+            createdAt: data.createdAt ? data.createdAt.toDate() : new Date(),
           };
         });
         ordersData.sort((a, b) => b.createdAt - a.createdAt);

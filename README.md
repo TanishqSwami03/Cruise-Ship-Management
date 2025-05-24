@@ -1,12 +1,16 @@
-# React + Vite
+🚢 Cruise Ship Web App
+A modern cruise management platform built with React, Firebase, and Tailwind CSS, enabling passengers to book cabins, track expenses, and manage their profiles — all in real-time.
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+🌟 Features :-
 
-Currently, two official plugins are available:
+🧳 Cabin Booking: Passengers can browse and book available cabins based on their preferences.
+⏱️ Check-In/Check-Out System: Track voyage start and end dates seamlessly.
+👤 Profile Dashboard: Personalized dashboard showing user info, contact details, cabin number, and live expense tracking.
+🔁 Real-Time Data: Uses Firestore to reflect updates like expenses instantly across the UI.
+🔐 Authentication: Firebase Auth ensures secure login and session handling.
+🛠️ Admin Panel: Admins can manage voyager data, monitor orders, and maintain overall system integrity.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+🧰 Tech Stack :-
 
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+Frontend: React, Tailwind CSS
+Backend/Database: Firebase Firestore, Firebase Auth
