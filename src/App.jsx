@@ -12,16 +12,17 @@ import { Analytics } from "@vercel/analytics/react"
 function App() {
 
   return (
-    <Routes>
-      <Route path="/admin/*" element={<AdminApp />} />
-      <Route path="/headCook/*" element={<HeadCookApp />} />
-      <Route path="/manager/*" element={<ManagerApp />} />
-      <Route path="/supervisor/*" element={<SupervisorApp />} />
-      <Route path="/voyager/*" element={<VoyagerApp />} />
-      <Route path="/*" element={<WelcomeApp />} />
-
+    <>
+      <Routes>
+        <Route path="/admin/*" element={<AdminApp />} />
+        <Route path="/headCook/*" element={<HeadCookApp />} />
+        <Route path="/manager/*" element={<ManagerApp />} />
+        <Route path="/supervisor/*" element={<SupervisorApp />} />
+        <Route path="/voyager/*" element={<VoyagerApp />} />
+        <Route path="/*" element={<WelcomeApp />} />
+      </Routes>
       <Analytics/>
-    </Routes>
+    </>
   )
 }
 
