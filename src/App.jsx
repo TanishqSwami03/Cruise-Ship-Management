@@ -7,6 +7,8 @@ import SupervisorApp from './dashboards/supervisor/App.jsx'
 import VoyagerApp from './dashboards/voyager/App.jsx'
 import WelcomeApp from './dashboards/welcome/App.jsx'
 
+import { Analytics } from "@vercel/analytics/react"
+
 function App() {
 
   return (
@@ -17,6 +19,8 @@ function App() {
       <Route path="/supervisor/*" element={<SupervisorApp />} />
       <Route path="/voyager/*" element={<VoyagerApp />} />
       <Route path="/*" element={<WelcomeApp />} />
+
+      <Analytics/>
     </Routes>
   )
 }
