@@ -1,16 +1,23 @@
-🚢 Cruise Ship Web App
-A modern cruise management platform built with React, Firebase, and Tailwind CSS, enabling passengers to book cabins, track expenses, and manage their profiles — all in real-time.
+<h1 align="center" id="title">Cruise Ship Web Application</h1>
 
-🌟 Features :-
+<p id="description">A full-stack cruise ship management web application where users can book cabins, check in/out, track real-time expenses, and manage their trip seamlessly. Admins can oversee all passengers, manage bookings, and maintain operational control from a unified dashboard.</p>
 
-🧳 Cabin Booking: Passengers can browse and book available cabins based on their preferences.
-⏱️ Check-In/Check-Out System: Track voyage start and end dates seamlessly.
-👤 Profile Dashboard: Personalized dashboard showing user info, contact details, cabin number, and live expense tracking.
-🔁 Real-Time Data: Uses Firestore to reflect updates like expenses instantly across the UI.
-🔐 Authentication: Firebase Auth ensures secure login and session handling.
-🛠️ Admin Panel: Admins can manage voyager data, monitor orders, and maintain overall system integrity.
+<h2>🧐 Features</h2>
 
-🧰 Tech Stack :-
+Here are some of the key features:
 
-Frontend: React, Tailwind CSS
-Backend/Database: Firebase Firestore, Firebase Auth
+* 🚢 **Cabin Booking System**: Users can book cabins based on availability and preferences.
+* 💰 **Real-time Expense Tracking**: Passengers can see their running expenses during the trip.
+* 🧾 **Check-in / Check-out**: Track trip dates and cabin details.
+* 📇 **Voyager Profile**: Every user has a dedicated profile with personal and trip details.
+* 🔐 **Admin Panel**: Admins can manage voyagers, bookings, cabins, and expenses.
+* 🔄 **Live Firebase Sync**: Data updates instantly using Firebase Realtime features.
+
+<h2>💻 Built With</h2>
+
+Technologies used in this project:
+
+* 🌐 Frontend: React.js + Vite
+* 🔥 Backend: Firebase (Auth + Firestore)
+* 🎨 UI: Tailwind CSS
+
