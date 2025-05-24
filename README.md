@@ -21,3 +21,6 @@ Technologies used in this project:
 * 🔥 Backend: Firebase (Auth + Firestore)
 * 🎨 UI: Tailwind CSS
 
+<h2>🙋‍♂️ Author</h2>
+
+Made with 💙 by **TANISHQ RS**
